@@ -6,6 +6,7 @@ use Try::Tiny;
 
 use Tickit::RenderContext qw(LINE_THICK LINE_SINGLE LINE_DOUBLE);
 use Tickit::Utils qw(textwidth);
+use Tickit::Style;
 
 use constant CLEAR_BEFORE_RENDER => 0;
 
@@ -83,7 +84,7 @@ sub render {
 
 	# ... then we render our actual border, using a different style for
 	# active window...
-	my $line = $self->is_active ? LINE_DOUBLE : LINE_SINGLE;
+	my $line = LINE_SINGLE; # $self->is_active ? LINE_DOUBLE : LINE_SINGLE;
 	my $pen = $self->is_active ? Tickit::Pen->new(fg => 'white') : undef;
 	$rc->hline_at( 0,  0, $w, $line, $pen);
 	$rc->hline_at($h,  0, $w, $line, $pen);
@@ -119,7 +120,7 @@ sub render_frame {
 	my $target = shift;
 	my $win = $self->window or return;
 
-	my $line_type = $self->is_active ? LINE_DOUBLE : LINE_SINGLE;
+	my $line_type = LINE_SINGLE; # $self->is_active ? LINE_DOUBLE : LINE_SINGLE;
 
 	if($win->left < $target->left) {
 		$rc->hline_at($win->top, $win->left, $target->left, $line_type);

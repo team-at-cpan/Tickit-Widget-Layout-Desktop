@@ -32,8 +32,6 @@ window lists and launchers
 use curry::weak;
 use Scalar::Util qw(refaddr);
 use Tickit::Utils qw(textwidth);
-
-use Tickit::RenderContext qw(LINE_THICK LINE_SINGLE LINE_DOUBLE);
 use Tickit::Widget::Float;
 
 use constant CLEAR_BEFORE_RENDER => 0;
@@ -128,6 +126,7 @@ sub create_panel {
 		$rs->add($w->window->rect);
 		$rs->subtract($old->intersect($w->window->rect));
 		$dt_win->expose($_) for $rs->rects;
+		if(0) {
 		if($old->lines == $w->window->rect->lines && $old->cols == $w->window->rect->cols) {
 			$dt_win->scrollrect(
 				$w->window->top,
@@ -140,6 +139,8 @@ sub create_panel {
 		} else {
 			$w->window->expose;
 		}
+		}
+		$w->window->expose;
 		$old = $w->window->rect;
 		$w->reshape(@_);
 	});
