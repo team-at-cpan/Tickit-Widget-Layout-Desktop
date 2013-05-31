@@ -95,6 +95,7 @@ sub window_gained {
 	$self->SUPER::window_gained(@_);
 
 }
+
 sub loop { shift->{loop} }
 
 sub create_panel {
@@ -117,18 +118,39 @@ sub create_panel {
 	push @{$self->{widgets}}, $w;
 
 	# Need to redraw our window if position or size change
-	Scalar::Util::weaken(my $dt_win = $win);
-#	Tickit::Rect
-	my $old = $float->rect;
-	$float->set_on_geom_changed(sub {
-		my $rs = Tickit::RectSet->new;
-		$rs->add($old);
-		$rs->add($w->window->rect);
-		$rs->subtract($old->intersect($w->window->rect));
-		$dt_win->expose($_) for $rs->rects;
-		if(0) {
+	Scalar::Util::weaken($w);
+
+	$self->{extents}{refaddr $float} = $float->rect;
+	$float->set_on_geom_changed($self->curry::weak::float_geom_changed($w));
+	$w
+}
+
+sub float_geom_changed {
+	my $self = shift;
+	my $w = shift;
+	my $win = $self->window or return;
+	my $float = $w->window or return;
+
+	my $old = $self->{extents}{refaddr $float};
+	# Any time a panel moves or changes size, we'll potentially need
+	# to trigger expose events on the desktop background and any
+	# sibling windows.
+	# Start by working out what part of our current desktop
+	# has just been uncovered, and fire expose events at our top-level
+	# window for this area (for a move, it'll typically be up to two rectangles)
+	# area covered by the 
+	my $rs = Tickit::RectSet->new;
+	$rs->add($old);
+	$rs->subtract($w->window->rect);
+	# Originally thought we might need expose events for the newly-covered
+	# area as well, but that does not seem to be necessary.
+	# $rs->add($w->window->rect);
+	# $rs->subtract($old->intersect($w->window->rect));
+	$win->expose($_) for $rs->rects;
+	# This was an experiment which really didn't work out.
+	if(0) {
 		if($old->lines == $w->window->rect->lines && $old->cols == $w->window->rect->cols) {
-			$dt_win->scrollrect(
+			$win->scrollrect(
 				$w->window->top,
 				$w->window->left,
 				$w->window->lines,
@@ -139,14 +161,19 @@ sub create_panel {
 		} else {
 			$w->window->expose;
 		}
-		}
-		$w->window->expose;
-		$old = $w->window->rect;
-		$w->reshape(@_);
-	});
+	}
 
-	$w
+	# Mark the entire child window as exposed. Hopefully we can cut
+	# this down in future.
+	$w->window->expose;
+
+	# After all that we can stash the current extents for this child window
+	# so we know what's changed next time.
+	$self->{extents}{refaddr $float} = $w->window->rect;
+
+	$w->reshape(@_);
 }
+
 #Tickit::Window
 
 sub window_lost {
@@ -174,6 +201,12 @@ sub new {
 		$self->{loop} = $args{loop} or die "No loop provided?"
 	);
 	$self;
+}
+
+sub reshape {
+	my $self = shift;
+	my $win = $self->window or return;
+
 }
 
 1;

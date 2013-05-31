@@ -20,11 +20,29 @@ sub new {
 	$self;
 }
 
+=head2 mouse_press
+
+Override mouse click events to mark this window as active
+before continuing with the usual move/resize detection logic.
+
+Provides click-to-raise and click-to-focus behaviour.
+
+=cut
+
 sub mouse_press {
 	my $self = shift;
 	$self->{container}->make_active($self);
 	$self->SUPER::mouse_press(@_)
 }
+
+=head2 with_rc
+
+Runs the given coderef with a L<Tickit::RenderContext>, saving
+and restoring the context around the call.
+
+Returns $self.
+
+=cut
 
 sub with_rc {
 	my $self = shift;
@@ -36,12 +54,17 @@ sub with_rc {
 	$self;
 }
 
+=head2 render
+
+Returns $self.
+
+=cut
+
 sub render {
 	my $self = shift;
 	my %args = @_;
 	my $win = $self->window or return;
 
-	# We're going 
 	my $rc = Tickit::RenderContext->new(
 		lines => $win->lines,
 		cols  => $win->cols,
@@ -94,12 +117,12 @@ sub render {
 	# ... and then we overdraw the corners, but only if we're inactive,
 	# since active border is currently double lines and there's no
 	# rounded equivalent there.
-	unless($self->is_active) {
+#	unless($self->is_active) {
 		$rc->char_at( 0,  0, 0x256D, $pen) unless $tl == Tickit::RenderContext->LINE;
 		$rc->char_at($h,  0, 0x2570, $pen) unless $bl == Tickit::RenderContext->LINE;
 		$rc->char_at( 0, $w, 0x256E, $pen) unless $tr == Tickit::RenderContext->LINE;
 		$rc->char_at($h, $w, 0x256F, $pen) unless $br == Tickit::RenderContext->LINE;
-	}
+#	}
 
 	# Then the title
 	my $txt = ' ' . $self->label . ' ';
