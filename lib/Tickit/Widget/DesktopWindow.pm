@@ -1,4 +1,4 @@
-package Tickit::Widget::DesktopWindow;
+package Tickit::Widget::Desktop::Window;
 use strict;
 use warnings;
 use parent qw(Tickit::WidgetRole::Movable Tickit::SingleChildWidget);
@@ -10,6 +10,19 @@ use Tickit::Utils qw(textwidth);
 use Tickit::Style;
 
 use constant CLEAR_BEFORE_RENDER => 0;
+
+style_definition base =>
+	fg => 'grey',
+	linetype => 'round',
+	maximise_fg => 'green',
+	close_fg => 'red',
+	title_fg => 'white';
+
+style_definition ':active' =>
+	fg => 'white',
+	maximise_fg => 'hi-green',
+	close_fg => 'hi-red',
+	title_fg => 'hi-green';
 
 sub new {
 	my $class = shift;
@@ -118,7 +131,7 @@ sub render {
 	$rc->clip($args{rect});
 
 	# Use a default pen for drawing all the line-related pieces
-	$rc->setpen($self->is_active ? Tickit::Pen->new(fg => 'white') : Tickit::Pen->new(fg => 'grey'));
+	$rc->setpen($self->get_style_pen);
 
 	# $rc->clear(Tickit::Pen->new(fg => 'white'));
 
@@ -140,8 +153,7 @@ sub render {
 	});
 
 	my ($w, $h) = map $win->$_ - 1, qw(cols lines);
-# Tickit::Style
-	my $text_pen = Tickit::Pen->new(fg => $self->is_active ? 'hi-green' : 'white');
+	my $text_pen = $self->get_style_pen('title');
 
 	# This is a nasty hack - we want to know whether it's safe to draw
 	# rounded corners, so we start by checking whether we have any line
@@ -153,23 +165,26 @@ sub render {
 
 	# ... then we render our actual border, possibly using a different style for
 	# active window...
-	my $line = LINE_SINGLE; # $self->is_active ? LINE_DOUBLE : LINE_SINGLE;
-	my $pen = $self->is_active ? Tickit::Pen->new(fg => 'white') : undef;
-	$rc->hline_at( 0,  0, $w, $line, $pen);
-	$rc->hline_at($h,  0, $w, $line, $pen);
-	$rc->vline_at( 0, $h,  0, $line, $pen);
-	$rc->vline_at( 0, $h, $w, $line, $pen);
+	my $line = {
+		round => LINE_SINGLE,
+		single => LINE_SINGLE,
+		thick => LINE_THICK,
+		double => LINE_DOUBLE,
+	}->{$self->get_style_values('linetype')};
+	$rc->hline_at( 0,  0, $w, $line);
+	$rc->hline_at($h,  0, $w, $line);
+	$rc->vline_at( 0, $h,  0, $line);
+	$rc->vline_at( 0, $h, $w, $line);
 
-	# ... and then we overdraw the corners, but only if we're inactive,
+	# ... and then we overdraw the corners, but only if we have
 	# since active border is currently double lines and there's no
 	# rounded equivalent there.
-	# ... except it's not any more. this should really be a style.
-#	unless($self->is_active) {
-		$rc->char_at( 0,  0, 0x256D, $pen) unless $tl == Tickit::RenderContext->LINE;
-		$rc->char_at($h,  0, 0x2570, $pen) unless $bl == Tickit::RenderContext->LINE;
-		$rc->char_at( 0, $w, 0x256E, $pen) unless $tr == Tickit::RenderContext->LINE;
-		$rc->char_at($h, $w, 0x256F, $pen) unless $br == Tickit::RenderContext->LINE;
-#	}
+	if($self->get_style_values('linetype') eq 'round') {
+		$rc->char_at( 0,  0, 0x256D) unless $tl == Tickit::RenderContext->LINE;
+		$rc->char_at($h,  0, 0x2570) unless $bl == Tickit::RenderContext->LINE;
+		$rc->char_at( 0, $w, 0x256E) unless $tr == Tickit::RenderContext->LINE;
+		$rc->char_at($h, $w, 0x256F) unless $br == Tickit::RenderContext->LINE;
+	}
 
 	# Then the title
 	my $txt = $self->format_label;
@@ -178,8 +193,8 @@ sub render {
 	# and the icons for min/max/close, minimise isn't particularly useful so
 	# let's not bother with that one.
 	# $rc->text_at(0, $w - 3, "\N{U+238A}", Tickit::Pen->new(fg => 'hi-yellow'));
-	$rc->text_at(0, $w - 3, "\N{U+25CE}", Tickit::Pen->new(fg => 'hi-green'));
-	$rc->text_at(0, $w - 1, "\N{U+2612}", Tickit::Pen->new(fg => 'hi-red'));
+	$rc->text_at(0, $w - 3, "\N{U+25CE}", $self->get_style_pen('maximise'));
+	$rc->text_at(0, $w - 1, "\N{U+2612}", $self->get_style_pen('close'));
 
 	# Done - render and return
 	$rc->flush_to_window($win);
@@ -290,6 +305,7 @@ sub set_child_window {
 sub mark_active {
 	my $self = shift;
 	$self->{active} = 1;
+	$self->set_style_tag(active => 1);
 	$self->expose_frame;
 	$self
 }
@@ -297,6 +313,7 @@ sub mark_active {
 sub mark_inactive {
 	my $self = shift;
 	$self->{active} = 0;
+	$self->set_style_tag(active => 0);
 	$self->expose_frame;
 	$self
 }

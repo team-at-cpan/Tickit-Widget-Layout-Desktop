@@ -10,13 +10,13 @@ Constructed of:
 
 =over 4
 
-=item * DesktopWindow - the window implementation
+=item * ::Desktop::Window - the window implementation
 
-=item * Desktop - background desktop on which the
+=item * ::Desktop - background desktop on which the
 floats are displayed
 
-=item * Taskbar - a subclass of statusbar which provides
-window lists and launchers
+=item * ::Desktop::Taskbar - a subclass of statusbar which provides
+window lists and launchers (maybe)
 
 =back
 
@@ -27,7 +27,7 @@ use curry::weak;
 use Scalar::Util qw(refaddr);
 use List::Util qw(max);
 use Tickit::Utils qw(textwidth distribute);
-use Tickit::Widget::DesktopWindow;
+use Tickit::Widget::Desktop::Window;
 
 use constant CLEAR_BEFORE_RENDER => 0;
 
@@ -115,7 +115,7 @@ sub loop { shift->{loop} }
 
 =head2 create_panel
 
-Creates a L<Tickit::Widget::DesktopWindow> on this L<Tickit::Widget::Desktop>.
+Creates a L<Tickit::Widget::Desktop::Window> on this L<Tickit::Widget::Desktop>.
 
 Takes the following named parameters:
 
@@ -147,7 +147,7 @@ sub create_panel {
 		$args{cols},
 	);
 
-	my $w = Tickit::Widget::DesktopWindow->new(
+	my $w = Tickit::Widget::Desktop::Window->new(
 		container => $self,
 	);
 	$w->label($args{label} // 'window');
@@ -218,12 +218,12 @@ sub float_geom_changed {
 
 =head1 API METHODS
 
-These methods are provided as an API for the L<Tickit::Widget::DesktopWindow> children.
+These methods are provided as an API for the L<Tickit::Widget::Desktop::Window> children.
 They allow widgets to interact with the desktop for requesting focus etc.
 
 =head2 make_active
 
-Makes the requested L<Tickit::Widget::DesktopWindow> active - brings it to the front of
+Makes the requested L<Tickit::Widget::Desktop::Window> active - brings it to the front of
 the stack and gives it focus.
 
 Returns $self.
