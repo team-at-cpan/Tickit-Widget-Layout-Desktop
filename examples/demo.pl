@@ -75,6 +75,10 @@ $loop->later(sub {
 		on_activate => sub { $desktop->cascade }
 	));
 	$item->add_item(Tickit::Widget::Menubar::Item->new(
+		label => 'Over&lapping tiles',
+		on_activate => sub { $desktop->tile(overlap => 1) }
+	));
+	$item->add_item(Tickit::Widget::Menubar::Item->new(
 		label => 'Close a&ll',
 		on_activate => sub { $desktop->close_all }
 	));

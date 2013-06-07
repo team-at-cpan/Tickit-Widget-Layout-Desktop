@@ -147,7 +147,7 @@ sub create_panel {
 		$args{cols},
 	);
 
-	my $w = Tickit::Widget::Desktop::Window->new(
+	my $w = ($args{subclass} || 'Tickit::Widget::Desktop::Window')->new(
 		container => $self,
 	);
 	$w->label($args{label} // 'window');
@@ -318,10 +318,25 @@ sub cascade {
 	$self
 }
 
+=head2 tile
+
+Tiles all the windows. Tries to lay them out so things don't overlap.
+Since we're resizing, things may end up ridiculously small.
+
+Pass overlap => 1 to have overlapping edges.
+
+Returns $self.
+
+=cut
+
 sub tile {
 	my $self = shift;
+	my %args = @_;
 	my $win = $self->window or return;
-	my @windows = reverse @{$self->window->{child_windows}};
+	my @windows = reverse @{$win->{child_windows}};
+
+	# Try to end up with something vaguely square. Probably a bad
+	# choice but it seems tolerable for the moment.
 	my $side = int(sqrt 0+@windows) || 1;
 
 	# Find the tallest window in each grid row for distribution
@@ -333,6 +348,10 @@ sub tile {
 			push @lines, +{ expand => 1, base => max map $_->lines, @batch };
 		}
 		distribute($win->lines, @lines);
+		if($args{overlap}) { # haxx
+			++$_->{value} for @lines;
+			--$lines[-1]{value};
+		}
 	}
 
 	# Now step through all the windows, handling one row at a time
@@ -341,11 +360,20 @@ sub tile {
 		my $l = shift @lines;
 		my @cols  = map +{ base => $_->cols, expand => 1}, @batch;
 		distribute($win->cols, @cols);
+		if($args{overlap}) { # haxx
+			++$_->{value} for @cols;
+			--$cols[-1]{value};
+		}
 		foreach my $w (@batch) {
 			my $c = shift @cols;
 			$w->change_geometry($l->{start}, $c->{start}, $l->{value}, $c->{value});
 		}
 	}
+}
+
+sub close_all {
+	my $self = shift;
+	$_->close for reverse @{$self->window->{child_windows}};
 }
 
 1;

@@ -12,17 +12,17 @@ use Tickit::Style;
 use constant CLEAR_BEFORE_RENDER => 0;
 
 style_definition base =>
-	fg => 'grey',
-	linetype => 'round',
-	maximise_fg => 'green',
-	close_fg => 'red',
-	title_fg => 'white';
+	fg          => 'grey',   # Generic frame lines
+	linetype    => 'round',  # How to draw frames, 'round' means single with rounded corners
+	maximise_fg => 'green',  # Maximise button
+	close_fg    => 'red',    # Close button
+	title_fg    => 'white';
 
 style_definition ':active' =>
-	fg => 'white',
+	fg          => 'white',
 	maximise_fg => 'hi-green',
-	close_fg => 'hi-red',
-	title_fg => 'hi-green';
+	close_fg    => 'hi-red',
+	title_fg    => 'hi-green';
 
 sub new {
 	my $class = shift;
