@@ -1,7 +1,8 @@
-package Tickit::Widget::Float;
+package Tickit::Widget::DesktopWindow;
 use strict;
 use warnings;
 use parent qw(Tickit::WidgetRole::Movable Tickit::SingleChildWidget);
+
 use Try::Tiny;
 
 use Tickit::RenderContext qw(LINE_THICK LINE_SINGLE LINE_DOUBLE);
@@ -20,6 +21,33 @@ sub new {
 	$self;
 }
 
+=head2 position_is_maximise
+
+Returns true if this location is the maximise button.
+
+=cut
+
+sub position_is_maximise {
+	my ($self, $line, $col) = @_;
+	my $win = $self->window or return;
+	return 1 if $line == 0 && $col == $win->cols - 4;
+	return 0;
+}
+
+=head2 position_is_close
+
+Returns true if this location is the close button.
+
+=cut
+
+sub position_is_close {
+	my ($self, $line, $col) = @_;
+	my $win = $self->window or return;
+	return 1 if $line == 0 && $col == $win->cols - 2;
+	return 0;
+}
+
+
 =head2 mouse_press
 
 Override mouse click events to mark this window as active
@@ -31,8 +59,26 @@ Provides click-to-raise and click-to-focus behaviour.
 
 sub mouse_press {
 	my $self = shift;
+	my ($line, $col) = @_;
 	$self->{container}->make_active($self);
-	$self->SUPER::mouse_press(@_)
+	if($self->position_is_close($line, $col)) {
+		# Close button... probably need some way to indicate when
+		# this happens, Tickit::Window doesn't appear to have set_on_closed ?
+		$self->window->clear;
+		$self->window->close;
+		return 1;
+	} elsif($self->position_is_maximise($line, $col)) {
+		my $win = $self->window or return 1;
+		$win->change_geometry(
+			0,
+			0,
+			$win->parent->lines,
+			$win->parent->cols,
+		);
+		return 1;
+	} else {
+		$self->SUPER::mouse_press(@_)
+	}
 }
 
 =head2 with_rc
@@ -105,7 +151,7 @@ sub render {
 	my $bl = $rc->_xs_getcell($h,  0)->state;
 	my $br = $rc->_xs_getcell($h, $w)->state;
 
-	# ... then we render our actual border, using a different style for
+	# ... then we render our actual border, possibly using a different style for
 	# active window...
 	my $line = LINE_SINGLE; # $self->is_active ? LINE_DOUBLE : LINE_SINGLE;
 	my $pen = $self->is_active ? Tickit::Pen->new(fg => 'white') : undef;
@@ -117,6 +163,7 @@ sub render {
 	# ... and then we overdraw the corners, but only if we're inactive,
 	# since active border is currently double lines and there's no
 	# rounded equivalent there.
+	# ... except it's not any more. this should really be a style.
 #	unless($self->is_active) {
 		$rc->char_at( 0,  0, 0x256D, $pen) unless $tl == Tickit::RenderContext->LINE;
 		$rc->char_at($h,  0, 0x2570, $pen) unless $bl == Tickit::RenderContext->LINE;
@@ -125,16 +172,22 @@ sub render {
 #	}
 
 	# Then the title
-	my $txt = ' ' . $self->label . ' ';
+	my $txt = $self->format_label;
 	$rc->text_at(0, (1 + $w - textwidth($txt)) >> 1, $txt, $text_pen);
 
-	# and the icons for min/max/close
-	$rc->text_at(0, $w - 3, "\N{U+238A}", Tickit::Pen->new(fg => 'hi-yellow'));
-	$rc->text_at(0, $w - 2, "\N{U+25CE}", Tickit::Pen->new(fg => 'hi-green'));
+	# and the icons for min/max/close, minimise isn't particularly useful so
+	# let's not bother with that one.
+	# $rc->text_at(0, $w - 3, "\N{U+238A}", Tickit::Pen->new(fg => 'hi-yellow'));
+	$rc->text_at(0, $w - 3, "\N{U+25CE}", Tickit::Pen->new(fg => 'hi-green'));
 	$rc->text_at(0, $w - 1, "\N{U+2612}", Tickit::Pen->new(fg => 'hi-red'));
 
 	# Done - render and return
 	$rc->flush_to_window($win);
+}
+
+sub format_label {
+	my $self = shift;
+	'[ ' . $self->label . ' ]';
 }
 
 sub render_frame {
@@ -188,7 +241,26 @@ sub cols {
 }
 
 sub children_changed { shift->set_child_window }
-sub reshape { shift->set_child_window }
+
+sub window_gained {
+	my $self = shift;
+	my ($win) = @_;
+	delete $self->{frame_rects};
+	$self->{window_lines} = $win->lines;
+	$self->{window_cols} = $win->cols;
+	return $self->SUPER::window_gained(@_);
+}
+
+sub reshape {
+	my $self = shift;
+	my $win = $self->window;
+
+	# Keep our frame info if we're just moving the window around
+	delete $self->{frame_rects} unless $self->{window_lines} == $win->lines && $self->{window_cols} == $win->cols;
+	$self->{window_lines} = $win->lines;
+	$self->{window_cols} = $win->cols;
+	$self->set_child_window
+}
 
 sub set_child_window {
    my $self = shift;
@@ -213,6 +285,38 @@ sub set_child_window {
          $child->set_window( undef );
       }
    }
+}
+
+sub mark_active {
+	my $self = shift;
+	$self->{active} = 1;
+	$self->expose_frame;
+	$self
+}
+
+sub mark_inactive {
+	my $self = shift;
+	$self->{active} = 0;
+	$self->expose_frame;
+	$self
+}
+
+# 'hmmm.'
+sub expose_frame {
+	my $self = shift;
+	my $win = $self->window or return $self;
+	$win->expose($_) for $self->frame_rects;
+	$self;
+}
+
+sub frame_rects {
+	my $self = shift;
+	@{ $self->{frame_rects} ||= [
+		Tickit::Rect->new(top => 0, left => 0, lines => 1, cols => $self->window->cols),
+		Tickit::Rect->new(top => 0, left => 0, lines => $self->window->lines, cols => 1),
+		Tickit::Rect->new(top => 0, left => $self->window->cols - 1, lines => $self->window->lines, cols => 1),
+		Tickit::Rect->new(top => $self->window->lines - 1, left => 0, lines => 1, cols => $self->window->cols),
+	] };
 }
 
 1;

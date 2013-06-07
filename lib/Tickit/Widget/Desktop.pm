@@ -10,13 +10,7 @@ Constructed of:
 
 =over 4
 
-=item * Float - the window implementation
-
-=item * Float::Close - close button
-
-=item * Float::Maximise - max button
-
-=item * Float::Minimise - max button
+=item * DesktopWindow - the window implementation
 
 =item * Desktop - background desktop on which the
 floats are displayed
@@ -31,8 +25,9 @@ window lists and launchers
 
 use curry::weak;
 use Scalar::Util qw(refaddr);
-use Tickit::Utils qw(textwidth);
-use Tickit::Widget::Float;
+use List::Util qw(max);
+use Tickit::Utils qw(textwidth distribute);
+use Tickit::Widget::DesktopWindow;
 
 use constant CLEAR_BEFORE_RENDER => 0;
 
@@ -56,6 +51,17 @@ sub render {
 =head2 overlay
 
 Render all window outlines on top of the target widget.
+
+Takes the following parameters:
+
+=over 4
+
+=item * $rc - the L<Tickit::RenderContext> we will be drawing into
+
+=item * $exclude - the current L<Tickit::Widget> we are drawing - this will be used
+to check for intersections so we don't waste time drawing unrelated areas
+
+=back
 
 =cut
 
@@ -89,14 +95,45 @@ sub overlay {
 	}
 }
 
+=head2 window_gained
+
+Records our initial window geometry when the L<Tickit::Window> is first attached.
+
+=cut
+
 sub window_gained {
 	my $self = shift;
 	my ($win) = @_;
+	$self->{geometry} = {
+		map { $_ => $win->$_ } qw(top left lines cols)
+	};
 	$self->SUPER::window_gained(@_);
 
 }
 
 sub loop { shift->{loop} }
+
+=head2 create_panel
+
+Creates a L<Tickit::Widget::DesktopWindow> on this L<Tickit::Widget::Desktop>.
+
+Takes the following named parameters:
+
+=over 4
+
+=item * top - offset from top of desktop
+
+=item * left - offset from desktop left margin
+
+=item * lines - how many lines the new widget will have, should be >2 to display anything useful
+
+=item * cols - how many columns the new widget will have, should be >2 to display anything useful
+
+=item * label - what label to use, default is the uninspiring text C<window>
+
+=back
+
+=cut
 
 sub create_panel {
 	my $self = shift;
@@ -110,16 +147,14 @@ sub create_panel {
 		$args{cols},
 	);
 
-	my $w = Tickit::Widget::Float->new(
+	my $w = Tickit::Widget::DesktopWindow->new(
 		container => $self,
 	);
-	$w->label($args{label} // 'A window');
+	$w->label($args{label} // 'window');
 	$w->set_window($float);
 	push @{$self->{widgets}}, $w;
 
 	# Need to redraw our window if position or size change
-	Scalar::Util::weaken($w);
-
 	$self->{extents}{refaddr $float} = $float->rect;
 	$float->set_on_geom_changed($self->curry::weak::float_geom_changed($w));
 	$w
@@ -147,7 +182,9 @@ sub float_geom_changed {
 	# $rs->add($w->window->rect);
 	# $rs->subtract($old->intersect($w->window->rect));
 	$win->expose($_) for $rs->rects;
-	# This was an experiment which really didn't work out.
+	# This was an experiment which really didn't work out. Seems logical that shifting the
+	# area around would be more efficient, but it's not like many terminals appear to support
+	# arbitrary rectangular scrolling anyway.
 	if(0) {
 		if($old->lines == $w->window->rect->lines && $old->cols == $w->window->rect->cols) {
 			$win->scrollrect(
@@ -165,32 +202,40 @@ sub float_geom_changed {
 
 	# Mark the entire child window as exposed. Hopefully we can cut
 	# this down in future.
+	# FIXME We've marked the top-level (desktop) window as exposed for all the changed areas,
+	# so surely that would propagate to any relevant areas on the child windows? seems that
+	# this line really should not be needed if the above RectSet calculations were done
+	# correctly.
 	$w->window->expose;
 
 	# After all that we can stash the current extents for this child window
 	# so we know what's changed next time.
 	$self->{extents}{refaddr $float} = $w->window->rect;
 
+	# Do remember to pass on the event so the child widget knows what's going on
 	$w->reshape(@_);
 }
 
-#Tickit::Window
+=head1 API METHODS
 
-sub window_lost {
-	my $self = shift;
-	my $win = shift;
-}
+These methods are provided as an API for the L<Tickit::Widget::DesktopWindow> children.
+They allow widgets to interact with the desktop for requesting focus etc.
+
+=head2 make_active
+
+Makes the requested L<Tickit::Widget::DesktopWindow> active - brings it to the front of
+the stack and gives it focus.
+
+Returns $self.
+
+=cut
 
 sub make_active {
 	my $self = shift;
 	my $child = shift;
-	foreach my $w (@{$self->{widgets}}) {
-		$w->redraw if $w->is_active;
-		$w->{active} = 0;
-	}
-	$child->{active} = 1;
+	$_->mark_inactive for grep $_->is_active, @{$self->{widgets}};
 	$child->window->raise_to_front;
-	$child->redraw;
+	$child->mark_active;
 }
 
 sub new {
@@ -203,10 +248,104 @@ sub new {
 	$self;
 }
 
+=head2 reshape
+
+Deal with reshape requests.
+
+Since our windows are positioned directly, we're going to lose some information if shrink
+then expand the parent window again. This isn't ideal but hopefully we can get away with
+it for now.
+
+Returns $self.
+
+=cut
+
 sub reshape {
 	my $self = shift;
 	my $win = $self->window or return;
 
+	warn "Reshape request\n";
+	my @directions = qw(top left lines cols);
+
+	my $lines_ratio = $self->{geometry}{lines} ? $win->lines / $self->{geometry}{lines} : 1;
+	my $cols_ratio = $self->{geometry}{cols} ? $win->cols / $self->{geometry}{cols} : 1;
+
+	# First, get all the sizes across all widgets
+	foreach my $w (@{$self->{widgets}}) {
+		my $subwin = $w->window or next;
+		$w->window->change_geometry(
+			(map int, 
+				$subwin->top * $lines_ratio,
+				$subwin->left * $cols_ratio),
+			(map int($_) || 1,
+				$subwin->lines * $lines_ratio,
+				$subwin->cols * $cols_ratio)
+		);
+	}
+	$self->{geometry} = { map { $_ => $win->$_ } @directions };
+
+#	my %buckets = map { $_ => [] } @directions;
+#	foreach my $w (@{$self->{widgets}}) {
+#		push @{$buckets{$_}}, { base => $w->window->$_, expand => 1 } for @directions;
+#	}
+#
+#	# Now recalculate the distribution
+#	distribute($win->lines, @{$buckets{top}});
+#	distribute($win->lines, @{$buckets{lines}});
+#	distribute($win->cols, @{$buckets{left}});
+#	distribute($win->cols, @{$buckets{cols}});
+#	use Data::Dumper;
+#	warn Dumper(\%buckets);
+#
+#	# Then we apply the new sizes back to the widgets
+#	foreach my $w (@{$self->{widgets}}) {
+#		$w->window->change_geometry(
+#			map { (shift @{$buckets{$_}})->{value} } @directions,
+#		)
+#	}
+}
+
+sub cascade {
+	my $self = shift;
+	my @windows = reverse @{$self->window->{child_windows}};
+	my $x = 0;
+	my $y = 0;
+	my $lines = $self->window->lines - @windows;
+	$lines = 6 if $lines < 6;
+	my $cols = $self->window->cols - @windows;
+	$cols = 6 if $cols < 6;
+	$_->change_geometry($y++, $x++, $lines, $cols) for @windows;
+	$self
+}
+
+sub tile {
+	my $self = shift;
+	my $win = $self->window or return;
+	my @windows = reverse @{$self->window->{child_windows}};
+	my $side = int(sqrt 0+@windows) || 1;
+
+	# Find the tallest window in each grid row for distribution
+	my @lines;
+	{
+		my @rows = @windows;
+		while(@rows) {
+			my @batch = splice @rows, 0, $side;
+			push @lines, +{ expand => 1, base => max map $_->lines, @batch };
+		}
+		distribute($win->lines, @lines);
+	}
+
+	# Now step through all the windows, handling one row at a time
+	while(@windows) {
+		my @batch = splice @windows, 0, $side;
+		my $l = shift @lines;
+		my @cols  = map +{ base => $_->cols, expand => 1}, @batch;
+		distribute($win->cols, @cols);
+		foreach my $w (@batch) {
+			my $c = shift @cols;
+			$w->change_geometry($l->{start}, $c->{start}, $l->{value}, $c->{value});
+		}
+	}
 }
 
 1;

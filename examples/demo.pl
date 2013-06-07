@@ -10,6 +10,7 @@ use Tickit::Widget::Desktop;
 use Tickit::Widget::Statusbar;
 
 use Tickit::Demo;
+#use Carp::Always;
 
 my $loop = IO::Async::Loop->new;
 $loop->add(my $tickit = Tickit::Async->new);
@@ -25,16 +26,16 @@ $loop->later(sub {
 	$vbox->add(my $desktop = Tickit::Widget::Desktop->new(loop => $loop), expand => 1);
 
 	# None of these do anything since we're not providing any actions
-	$mb->add_item(my $item = Tickit::Widget::Menubar::Item->new(label => 'File'));
+	$mb->add_item(my $item = Tickit::Widget::Menubar::Item->new(label => '&File'));
 	$item->add_item(Tickit::Widget::Menubar::Item->new(
-		label => 'Exit',
+		label => 'E&xit',
 		on_activate => sub {
 			$tickit->later(sub {
 				$tickit->stop;
 			})
 		}
 	));
-	$mb->add_item($item = Tickit::Widget::Menubar::Item->new(label => 'Widgets'));
+	$mb->add_item($item = Tickit::Widget::Menubar::Item->new(label => '&Widgets'));
 	my $demo = Tickit::Demo->new(
 		desktop => $desktop,
 		tickit => $tickit,
@@ -64,10 +65,23 @@ $loop->later(sub {
 			}
 		},
 	));
-	$mb->add_item($item = Tickit::Widget::Menubar::Item::Separator->new, expand => 1);
-	$mb->add_item($item = Tickit::Widget::Menubar::Item->new(label => 'Help'));
+	$mb->add_item($item = Tickit::Widget::Menubar::Item->new(label => 'Win&dows'));
 	$item->add_item(Tickit::Widget::Menubar::Item->new(
-		label => 'About',
+		label => '&Tile',
+		on_activate => sub { $desktop->tile },
+	));
+	$item->add_item(Tickit::Widget::Menubar::Item->new(
+		label => 'Ca&scade',
+		on_activate => sub { $desktop->cascade }
+	));
+	$item->add_item(Tickit::Widget::Menubar::Item->new(
+		label => 'Close a&ll',
+		on_activate => sub { $desktop->close_all }
+	));
+	$mb->add_item($item = Tickit::Widget::Menubar::Item::Separator->new, expand => 1);
+	$mb->add_item($item = Tickit::Widget::Menubar::Item->new(label => '&Help'));
+	$item->add_item(Tickit::Widget::Menubar::Item->new(
+		label => '&About',
 		on_activate => sub { }
 	));
 	$vbox->add(

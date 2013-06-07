@@ -3,6 +3,8 @@ use strict;
 use warnings;
 use parent qw(Tickit::Widget);
 
+use constant CLEAR_BEFORE_RENDER => 0;
+
 use Tickit::Render::Truetype;
 
 sub lines { 1 }
@@ -36,7 +38,7 @@ sub render {
 		$rc,
 		text => $self->text,
 		pen => $self->pen,
-		size => 24,
+		size => 48,
 	);
 	$rc->flush_to_window($win);
 }
