@@ -1,0 +1,34 @@
+Things to add to github pages...
+
+A couple of widget roles:
+
+* Tickit::WidgetRole::Scrollable - support for horizontal/vertical scrollbars
+* Tickit::WidgetRole::Movable - move and resize widgets via click+drag events
+
+The 'desktop' metaphor, builds on ::Movable to provide:
+
+* Tickit::Widget::Desktop - container for movable/resizable 'windows'
+* Tickit::Widget::Desktop::Window - window managed by Tickit::Widget::Desktop, pretty much a ::Frame but movable/resizable and with close/maximise buttons
+* Tickit::Widget::Desktop::Window::Linked - a subclass of Desktop::Window which supports constraints, such as left edge of one window is linked to right edge of the other
+
+Rendering utility classes (they take a ::RenderContext and draw things into it):
+
+* Tickit::Render::Canvas - splines, ellipses and other drawing-related things
+* Tickit::Render::Image - 2x2 quarterblock rendering from Imager pixels
+* Tickit::Render::Truetype - uses Imager::Font to render large text
+* Tickit::Render::QRCode - uses Imager::QRCode to display QR codes
+
+Layout management:
+
+* Tickit::Layout::Relative - alternative widget layout, positions each widget relative to the others in an attempt to make something that's more semantic than manually assigning to specific container widgets. Currently standalone but planning to modify it to support ::Desktop layouts.
+
+Aside from the demo app which just provides access to sample widgets, looking at a couple of more substantial apps to show "real-world" usage:
+
+* SQL database layout - uses ::Desktop and some linedrawing to show relationships between tables, currently PG-only until I get around to converting it to DBIx::Async
+* IMAP browser - uses linked widgets in ::Desktop layout to provide the standard 3-pane mail client layout: list of folders, list of messages in folder, current message. Demonstrates table, tree, and linked layout, file saving+loading uses the filebrowser widget.
+
+Domain-specific language:
+
+* Tickit::DSL - simplified widget creation for use in one-liners and layout testing. Mainly to avoid typing Tickit::Widget::Something->new->add(Tickit::Widget::SomethingElse(...)) too often.
+
+
