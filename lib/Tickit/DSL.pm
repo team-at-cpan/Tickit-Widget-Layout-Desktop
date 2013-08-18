@@ -11,6 +11,9 @@ use Tickit::Widget::Scroller;
 use Tickit::Widget::Scroller::Item::Text;
 use Tickit::Widget::Statusbar;
 use Tickit::Widget::Tabbed;
+use Tickit::Widget::Menubar;
+use Tickit::Widget::Menubar::Item;
+use Tickit::Widget::Menubar::Item::Separator;
 use Tickit::Async;
 use IO::Async::Loop;
 
@@ -27,6 +30,7 @@ our @EXPORT = our @EXPORT_OK = qw(
 	scroller scroller_text
 	tabbed
 	statusbar
+	menubar submenu menuitem menuspacer
 );
 
 sub tickit { $TICKIT = shift if @_; $TICKIT ||= Tickit::Async->new }
@@ -112,11 +116,52 @@ sub entry(&@) {
 	apply_widget($w);
 }
 
+sub menubar(&@) {
+	my ($code, %args) = @_;
+	my $w = Tickit::Widget::Menubar->new;
+	{
+		local $PARENT = $w;
+		$code->($w);
+	}
+	apply_widget($w);
+}
+
+sub submenu {
+	my ($text, $code) = splice @_, 0, 2;
+	my $w = Tickit::Widget::Menubar::Item->new(label => $text);
+	{
+		local $PARENT = $w;
+		$code->($w);
+	}
+	apply_widget($w);
+}
+
+sub menuspacer() {
+	my $w = Tickit::Widget::Menubar::Item::Separator->new;
+	local @WIDGET_ARGS = (expand => 1);
+	apply_widget($w);
+}
+
+sub menuitem {
+	my ($text, $code) = splice @_, 0, 2;
+	my $w = Tickit::Widget::Menubar::Item->new(
+		label => $text,
+		on_activate => $code,
+	);
+	apply_widget($w);
+}
+
 sub apply_widget {
 	my $w = shift;
 	if($PARENT) {
 		if($PARENT->isa('Tickit::Widget::Scroller')) {
 			$PARENT->push($w);
+		} elsif($PARENT->isa('Tickit::Widget::Menubar::Item')) {
+			$PARENT->add_item($w, @WIDGET_ARGS);
+		} elsif($PARENT->isa('Tickit::Widget::Menubar::Vertical')) {
+			$PARENT->add_item($w, @WIDGET_ARGS);
+		} elsif($PARENT->isa('Tickit::Widget::Menubar::Horizontal')) {
+			$PARENT->add_item($w, @WIDGET_ARGS);
 		} else {
 			$PARENT->add($w, @WIDGET_ARGS);
 		}
