@@ -4,8 +4,9 @@ use warnings;
 use IO::Async::Loop;
 use Tickit::Async;
 use Tickit::Widget::VBox;
-use Tickit::Widget::Menubar;
-use Tickit::Widget::Menubar::Item;
+use Tickit::Widget::MenuBar;
+use Tickit::Widget::Menu;
+use Tickit::Widget::Menu::Item;
 use Tickit::Widget::Desktop;
 use Tickit::Widget::Statusbar;
 
@@ -18,34 +19,33 @@ my $vbox = Tickit::Widget::VBox->new;
 
 # Defer the setup until we have our terminal window, since we're not currently
 # hooking the ::Desktop window allocation.
-$loop->later(sub {
-	$vbox->add(my $mb = Tickit::Widget::Menubar->new(
-		popup_container => $vbox->window,
-		linetype => 'single',
+#$loop->later(sub {
+	$vbox->add(my $mb = Tickit::Widget::MenuBar->new(
+		items => []
 	));
 	$vbox->add(my $desktop = Tickit::Widget::Desktop->new(loop => $loop), expand => 1);
 
 	# None of these do anything since we're not providing any actions
-	$mb->add_item(my $item = Tickit::Widget::Menubar::Item->new(label => '&File'));
-	$item->add_item(Tickit::Widget::Menubar::Item->new(
-		label => 'E&xit',
+	$mb->push_item(my $item = Tickit::Widget::Menu->new(name => '&File'));
+	$item->push_item(Tickit::Widget::Menu::Item->new(
+		name => 'E&xit',
 		on_activate => sub {
 			$tickit->later(sub {
 				$tickit->stop;
 			})
 		}
 	));
-	$mb->add_item($item = Tickit::Widget::Menubar::Item->new(label => '&Widgets'));
+	$mb->push_item($item = Tickit::Widget::Menu->new(name => '&Widgets'));
 	my $demo = Tickit::Demo->new(
 		desktop => $desktop,
 		tickit => $tickit,
 		loop => $loop,
 	);
 	foreach my $plugin ($demo->plugins(demo => $demo)) {
-		$item->add_item($plugin->menu_item($desktop));
+		$item->push_item($plugin->menu_item($desktop));
 	}
-	$item->add_item(Tickit::Widget::Menubar::Item->new(
-		label => 'Show me everything',
+	$item->push_item(Tickit::Widget::Menu::Item->new(
+		name => 'Show me everything',
 		on_activate => sub {
 			foreach my $plugin ($demo->plugins(demo => $demo)) {
 				my $w = $plugin->widget or die "No widget for $plugin?";
@@ -65,32 +65,32 @@ $loop->later(sub {
 			}
 		},
 	));
-	$mb->add_item($item = Tickit::Widget::Menubar::Item->new(label => 'Win&dows'));
-	$item->add_item(Tickit::Widget::Menubar::Item->new(
-		label => '&Tile',
+	$mb->push_item($item = Tickit::Widget::Menu->new(name => 'Win&dows'));
+	$item->push_item(Tickit::Widget::Menu::Item->new(
+		name => '&Tile',
 		on_activate => sub { $desktop->tile },
 	));
-	$item->add_item(Tickit::Widget::Menubar::Item->new(
-		label => 'Ca&scade',
+	$item->push_item(Tickit::Widget::Menu::Item->new(
+		name => 'Ca&scade',
 		on_activate => sub { $desktop->cascade }
 	));
-	$item->add_item(Tickit::Widget::Menubar::Item->new(
-		label => 'Over&lapping tiles',
+	$item->push_item(Tickit::Widget::Menu::Item->new(
+		name => 'Over&lapping tiles',
 		on_activate => sub { $desktop->tile(overlap => 1) }
 	));
-	$item->add_item(Tickit::Widget::Menubar::Item->new(
-		label => 'Close a&ll',
+	$item->push_item(Tickit::Widget::Menu::Item->new(
+		name => 'Close a&ll',
 		on_activate => sub { $desktop->close_all }
 	));
-	$mb->add_item($item = Tickit::Widget::Menubar::Item::Separator->new, expand => 1);
-	$mb->add_item($item = Tickit::Widget::Menubar::Item->new(label => '&Help'));
-	$item->add_item(Tickit::Widget::Menubar::Item->new(
-		label => '&About',
+#	$mb->push_item($item = Tickit::Widget::Menu::Item::Separator->new, expand => 1);
+	$mb->push_item($item = Tickit::Widget::Menu->new(name => '&Help'));
+	$item->push_item(Tickit::Widget::Menu::Item->new(
+		name => '&About',
 		on_activate => sub { }
 	));
 	$vbox->add(
 		Tickit::Widget::Statusbar->new(loop => $loop)
 	);
-});
+#});
 $tickit->set_root_widget($vbox);
 $tickit->run;

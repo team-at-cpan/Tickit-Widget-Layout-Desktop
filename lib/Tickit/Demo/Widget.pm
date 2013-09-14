@@ -17,8 +17,8 @@ sub menu_item {
 	my $class = shift;
 	my $desktop = shift;
 	Scalar::Util::weaken($desktop);
-	Tickit::Widget::Menubar::Item->new(
-		label => $class->label,
+	Tickit::Widget::Menu::Item->new(
+		name => $class->label,
 		on_activate => sub { $class->create($desktop) },
 	);
 }
