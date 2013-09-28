@@ -56,7 +56,7 @@ Takes the following parameters:
 
 =over 4
 
-=item * $rc - the L<Tickit::RenderContext> we will be drawing into
+=item * $rb - the L<Tickit::RenderBuffer> we will be drawing into
 
 =item * $exclude - the current L<Tickit::Widget> we are drawing - this will be used
 to check for intersections so we don't waste time drawing unrelated areas
@@ -67,7 +67,7 @@ to check for intersections so we don't waste time drawing unrelated areas
 
 sub overlay {
 	my $self = shift;
-	my $rc = shift;
+	my $rb = shift;
 	my $exclude = shift;
 	my $target = $exclude->window->rect;
 
@@ -86,12 +86,12 @@ sub overlay {
 		# so we don't draw lines that are obscured by upper
 		# layers
 		for my $l ($w->top..$w->bottom - 1) {
-			$rc->erase_at($l, $w->left + 1, $w->cols - 2);
+			$rb->erase_at($l, $w->left + 1, $w->cols - 2);
 		}
 
 		# Let the child window render itself to the given
 		# context, since it knows more about styles than we do
-		$child->render_frame($rc, $target);
+		$child->render_frame($rb, $target);
 	}
 }
 
@@ -185,16 +185,29 @@ sub float_geom_changed {
 	# This was an experiment which really didn't work out. Seems logical that shifting the
 	# area around would be more efficient, but it's not like many terminals appear to support
 	# arbitrary rectangular scrolling anyway.
-	if(0) {
-		if($old->lines == $w->window->rect->lines && $old->cols == $w->window->rect->cols) {
+	if(1) {
+		my $wr = $w->window->rect;
+		if($old->lines == $wr->lines && $old->cols == $wr->cols) {
+			# Tickit::Window;
+			my $down = ($wr->top - $old->top);
+			my $right = ($wr->left - $old->left);
+			warn sprintf '(%d,%d), %dx%d for %dx%d', $wr->left, $wr->top, $wr->cols, $wr->lines, $right, $down;
 			$win->scrollrect(
-				$w->window->top,
-				$w->window->left,
-				$w->window->lines,
-				$w->window->cols,
-				$w->window->top - $old->top,
-				$w->window->left - $old->left,
-			) or do { $w->window->expose($_) for $rs->rects };
+				$wr->top,
+				$wr->left,
+				$wr->lines,
+				$wr->cols,
+				$down,
+				$right,
+			) && $w->window->scrollrect(
+				0, #$wr->top,
+				0, #$wr->left,
+				$wr->lines,
+				$wr->cols,
+				$down,
+				$right,
+			) or do { warn "no scrolling :("; $w->window->expose($_) for $rs->rects };
+			$w->expose_frame;
 		} else {
 			$w->window->expose;
 		}
@@ -206,7 +219,7 @@ sub float_geom_changed {
 	# so surely that would propagate to any relevant areas on the child windows? seems that
 	# this line really should not be needed if the above RectSet calculations were done
 	# correctly.
-	$w->window->expose;
+#	$w->window->expose;
 
 	# After all that we can stash the current extents for this child window
 	# so we know what's changed next time.
@@ -264,7 +277,6 @@ sub reshape {
 	my $self = shift;
 	my $win = $self->window or return;
 
-	warn "Reshape request\n";
 	my @directions = qw(top left lines cols);
 
 	my $lines_ratio = $self->{geometry}{lines} ? $win->lines / $self->{geometry}{lines} : 1;

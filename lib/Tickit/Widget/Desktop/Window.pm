@@ -5,7 +5,7 @@ use parent qw(Tickit::WidgetRole::Movable Tickit::SingleChildWidget);
 
 use Try::Tiny;
 
-use Tickit::RenderContext qw(LINE_THICK LINE_SINGLE LINE_DOUBLE);
+use Tickit::RenderBuffer qw(LINE_THICK LINE_SINGLE LINE_DOUBLE);
 use Tickit::Utils qw(textwidth);
 use Tickit::Style;
 
@@ -94,62 +94,56 @@ sub mouse_press {
 	}
 }
 
-=head2 with_rc
+=head2 with_rb
 
-Runs the given coderef with a L<Tickit::RenderContext>, saving
+Runs the given coderef with a L<Tickit::RenderBuffer>, saving
 and restoring the context around the call.
 
 Returns $self.
 
 =cut
 
-sub with_rc {
+sub with_rb {
 	my $self = shift;
-	my $rc = shift;
+	my $rb = shift;
 	my $code = shift;
-	$rc->save;
-	$code->($rc);
-	$rc->restore;
+	$rb->save;
+	$code->($rb);
+	$rb->restore;
 	$self;
 }
 
-=head2 render
+=head2 render_to_rb
 
 Returns $self.
 
 =cut
 
-sub render {
+sub render_to_rb {
 	my $self = shift;
-	my %args = @_;
+	my ($rb, $rect) = @_;
 	my $win = $self->window or return;
 
-	my $rc = Tickit::RenderContext->new(
-		lines => $win->lines,
-		cols  => $win->cols,
-	);
-	$rc->clip($args{rect});
-
 	# Use a default pen for drawing all the line-related pieces
-	$rc->setpen($self->get_style_pen);
+	$rb->setpen($self->get_style_pen);
 
-	# $rc->clear(Tickit::Pen->new(fg => 'white'));
+	# $rb->clear(Tickit::Pen->new(fg => 'white'));
 
 	# First, work out any line intersections for our border.
-	$self->with_rc($rc => sub {
-		my $rc = shift;
+	$self->with_rb($rb => sub {
+		my $rb = shift;
 
 		# We'll be rendering relative to the container
-		$rc->translate(-$win->top, -$win->left);
+		$rb->translate(-$win->top, -$win->left);
 
 		# Ask our container to ask all other floating
 		# windows to render their frames on our context,
 		# so we join line segments where expected
-		$self->{container}->overlay($rc => $self);
+		$self->{container}->overlay($rb => $self);
 
 		# Restore our origin
 		# TODO would've thought ->restore should handle this?
-		$rc->translate( $win->top,  $win->left);
+		$rb->translate($win->top, $win->left);
 	});
 
 	my ($w, $h) = map $win->$_ - 1, qw(cols lines);
@@ -158,10 +152,10 @@ sub render {
 	# This is a nasty hack - we want to know whether it's safe to draw
 	# rounded corners, so we start by checking whether we have any line
 	# cells already in place in the corners...
-	my $tl = $rc->_xs_getcell( 0,  0)->state;
-	my $tr = $rc->_xs_getcell( 0, $w)->state;
-	my $bl = $rc->_xs_getcell($h,  0)->state;
-	my $br = $rc->_xs_getcell($h, $w)->state;
+	my $tl = $rb->_xs_getcell( 0,  0)->state;
+	my $tr = $rb->_xs_getcell( 0, $w)->state;
+	my $bl = $rb->_xs_getcell($h,  0)->state;
+	my $br = $rb->_xs_getcell($h, $w)->state;
 
 	# ... then we render our actual border, possibly using a different style for
 	# active window...
@@ -171,33 +165,30 @@ sub render {
 		thick => LINE_THICK,
 		double => LINE_DOUBLE,
 	}->{$self->get_style_values('linetype')};
-	$rc->hline_at( 0,  0, $w, $line);
-	$rc->hline_at($h,  0, $w, $line);
-	$rc->vline_at( 0, $h,  0, $line);
-	$rc->vline_at( 0, $h, $w, $line);
+	$rb->hline_at( 0,  0, $w, $line);
+	$rb->hline_at($h,  0, $w, $line);
+	$rb->vline_at( 0, $h,  0, $line);
+	$rb->vline_at( 0, $h, $w, $line);
 
 	# ... and then we overdraw the corners, but only if we have
 	# since active border is currently double lines and there's no
 	# rounded equivalent there.
 	if($self->get_style_values('linetype') eq 'round') {
-		$rc->char_at( 0,  0, 0x256D) unless $tl == Tickit::RenderContext->LINE;
-		$rc->char_at($h,  0, 0x2570) unless $bl == Tickit::RenderContext->LINE;
-		$rc->char_at( 0, $w, 0x256E) unless $tr == Tickit::RenderContext->LINE;
-		$rc->char_at($h, $w, 0x256F) unless $br == Tickit::RenderContext->LINE;
+		$rb->char_at( 0,  0, 0x256D) unless $tl == Tickit::RenderBuffer->LINE;
+		$rb->char_at($h,  0, 0x2570) unless $bl == Tickit::RenderBuffer->LINE;
+		$rb->char_at( 0, $w, 0x256E) unless $tr == Tickit::RenderBuffer->LINE;
+		$rb->char_at($h, $w, 0x256F) unless $br == Tickit::RenderBuffer->LINE;
 	}
 
 	# Then the title
 	my $txt = $self->format_label;
-	$rc->text_at(0, (1 + $w - textwidth($txt)) >> 1, $txt, $text_pen);
+	$rb->text_at(0, (1 + $w - textwidth($txt)) >> 1, $txt, $text_pen);
 
 	# and the icons for min/max/close, minimise isn't particularly useful so
 	# let's not bother with that one.
-	# $rc->text_at(0, $w - 3, "\N{U+238A}", Tickit::Pen->new(fg => 'hi-yellow'));
-	$rc->text_at(0, $w - 3, "\N{U+25CE}", $self->get_style_pen('maximise'));
-	$rc->text_at(0, $w - 1, "\N{U+2612}", $self->get_style_pen('close'));
-
-	# Done - render and return
-	$rc->flush_to_window($win);
+	# $rb->text_at(0, $w - 3, "\N{U+238A}", Tickit::Pen->new(fg => 'hi-yellow'));
+	$rb->text_at(0, $w - 3, "\N{U+25CE}", $self->get_style_pen('maximise'));
+	$rb->text_at(0, $w - 1, "\N{U+2612}", $self->get_style_pen('close'));
 }
 
 sub format_label {
@@ -207,31 +198,31 @@ sub format_label {
 
 sub render_frame {
 	my $self = shift;
-	my $rc = shift;
+	my $rb = shift;
 	my $target = shift;
 	my $win = $self->window or return;
 
 	my $line_type = LINE_SINGLE; # $self->is_active ? LINE_DOUBLE : LINE_SINGLE;
 
 	if($win->left < $target->left) {
-		$rc->hline_at($win->top, $win->left, $target->left, $line_type);
-		$rc->hline_at($win->bottom - 1, $win->left, $target->left, $line_type);
+		$rb->hline_at($win->top, $win->left, $target->left, $line_type);
+		$rb->hline_at($win->bottom - 1, $win->left, $target->left, $line_type);
 	}
 	if($win->right > $target->right) {
-		$rc->hline_at($win->top, $target->right - 1, $win->right - 1, $line_type);
-		$rc->hline_at($win->bottom - 1, $target->right - 1, $win->right - 1, $line_type);
+		$rb->hline_at($win->top, $target->right - 1, $win->right - 1, $line_type);
+		$rb->hline_at($win->bottom - 1, $target->right - 1, $win->right - 1, $line_type);
 	}
 	if($win->top < $target->top) {
-		$rc->vline_at($win->top, $target->top, $win->left, $line_type);
-		$rc->vline_at($win->top, $target->top, $win->right - 1, $line_type);
+		$rb->vline_at($win->top, $target->top, $win->left, $line_type);
+		$rb->vline_at($win->top, $target->top, $win->right - 1, $line_type);
 	}
 	if($win->bottom > $target->bottom) {
-		$rc->vline_at($target->bottom - 1, $win->bottom - 1, $win->left, $line_type);
-		$rc->vline_at($target->bottom - 1, $win->bottom - 1, $win->right - 1, $line_type);
+		$rb->vline_at($target->bottom - 1, $win->bottom - 1, $win->left, $line_type);
+		$rb->vline_at($target->bottom - 1, $win->bottom - 1, $win->right - 1, $line_type);
 	}
 
 	my $txt = ' ' . $self->label . ' ';
-	$rc->text_at($win->left, $win->top + (($win->cols - textwidth($txt)) >> 1), $txt);
+	$rb->text_at($win->left, $win->top + (($win->cols - textwidth($txt)) >> 1), $txt);
 }
 
 sub is_active { shift->{active} ? 1 : 0 }
