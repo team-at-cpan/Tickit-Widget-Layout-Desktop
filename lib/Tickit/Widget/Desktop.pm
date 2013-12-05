@@ -219,7 +219,7 @@ sub float_geom_changed {
 	# so surely that would propagate to any relevant areas on the child windows? seems that
 	# this line really should not be needed if the above RectSet calculations were done
 	# correctly.
-#	$w->window->expose;
+	$w->window->expose;
 
 	# After all that we can stash the current extents for this child window
 	# so we know what's changed next time.
