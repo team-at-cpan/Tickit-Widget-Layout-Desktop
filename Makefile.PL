@@ -10,7 +10,7 @@ use ExtUtils::MakeMaker 6.48;
 
 
 my %WriteMakefileArgs = (
-  "ABSTRACT" => "use strict;",
+  "ABSTRACT" => "desktop-like float management implementation for Tickit",
   "AUTHOR" => "Tom Molesworth <cpan\@perlsite.co.uk>",
   "CONFIGURE_REQUIRES" => {
     "ExtUtils::MakeMaker" => "6.48"
