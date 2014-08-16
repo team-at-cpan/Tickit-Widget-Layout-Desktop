@@ -198,7 +198,7 @@ sub float_geom_changed {
 	# This was an experiment which really didn't work out. Seems logical that shifting the
 	# area around would be more efficient, but it's not like many terminals appear to support
 	# arbitrary rectangular scrolling anyway.
-	if(1) {
+	if(0) {
 		my $wr = $w->window->rect;
 		if($old->lines == $wr->lines && $old->cols == $wr->cols) {
 			# Tickit::Window;
@@ -219,7 +219,10 @@ sub float_geom_changed {
 				$wr->cols,
 				$down,
 				$right,
-			) or do { warn "no scrolling :("; $w->window->expose($_) for $rs->rects };
+			) or do {
+				warn "no scrolling :(";
+				$w->window->expose($_) for $rs->rects
+			};
 			$w->expose_frame;
 		} else {
 			$w->window->expose;
@@ -239,7 +242,10 @@ sub float_geom_changed {
 	$self->{extents}{refaddr $float} = $w->window->rect;
 
 	# Do remember to pass on the event so the child widget knows what's going on
-	$w->reshape(@_);
+	$win->tickit->later(sub {
+		$w->window->expose;
+		$w->reshape(@_);
+	});
 }
 
 =head1 API METHODS

@@ -156,10 +156,14 @@ sub render_to_rb {
 	# This is a nasty hack - we want to know whether it's safe to draw
 	# rounded corners, so we start by checking whether we have any line
 	# cells already in place in the corners...
-	my $tl = $rb->_xs_getcell( 0,  0)->state;
-	my $tr = $rb->_xs_getcell( 0, $w)->state;
-	my $bl = $rb->_xs_getcell($h,  0)->state;
-	my $br = $rb->_xs_getcell($h, $w)->state;
+#	my $cell = $rb->get_cell($y, $x);  
+#	next CORNER unless $cell and my $linemask = $cell->linemask;
+#	my $corners = join "", grep { $linemask->$_ == LINE_SINGLE } qw( north south east west );
+
+	my $tl = $rb->get_cell( 0,  0)->linemask;
+	my $tr = $rb->get_cell( 0, $w)->linemask;
+	my $bl = $rb->get_cell($h,  0)->linemask;
+	my $br = $rb->get_cell($h, $w)->linemask;
 
 	# ... then we render our actual border, possibly using a different style for
 	# active window...
@@ -177,11 +181,11 @@ sub render_to_rb {
 	# ... and then we overdraw the corners, but only if we have
 	# since active border is currently double lines and there's no
 	# rounded equivalent there.
-	if($self->get_style_values('linetype') eq 'round') {
-		$rb->char_at( 0,  0, 0x256D) unless $tl == Tickit::RenderBuffer->LINE;
-		$rb->char_at($h,  0, 0x2570) unless $bl == Tickit::RenderBuffer->LINE;
-		$rb->char_at( 0, $w, 0x256E) unless $tr == Tickit::RenderBuffer->LINE;
-		$rb->char_at($h, $w, 0x256F) unless $br == Tickit::RenderBuffer->LINE;
+	if(0 and $self->get_style_values('linetype') eq 'round') {
+		$rb->char_at( 0,  0, 0x256D) unless $tl == Tickit::RenderBuffer->LINE_SINGLE;
+		$rb->char_at($h,  0, 0x2570) unless $bl == Tickit::RenderBuffer->LINE_SINGLE;
+		$rb->char_at( 0, $w, 0x256E) unless $tr == Tickit::RenderBuffer->LINE_SINGLE;
+		$rb->char_at($h, $w, 0x256F) unless $br == Tickit::RenderBuffer->LINE_SINGLE;
 	}
 
 	# Then the title
