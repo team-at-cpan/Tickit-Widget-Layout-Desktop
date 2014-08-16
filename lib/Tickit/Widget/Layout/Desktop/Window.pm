@@ -1,28 +1,32 @@
-package Tickit::Widget::Desktop::Window;
+package Tickit::Widget::Layout::Desktop::Window;
+
 use strict;
 use warnings;
-use parent qw(Tickit::WidgetRole::Movable Tickit::SingleChildWidget);
 
-use Try::Tiny;
+use parent qw(Tickit::WidgetRole::Movable Tickit::SingleChildWidget);
 
 use Tickit::RenderBuffer qw(LINE_THICK LINE_SINGLE LINE_DOUBLE);
 use Tickit::Utils qw(textwidth);
 use Tickit::Style;
 
-use constant CLEAR_BEFORE_RENDER => 0;
+BEGIN {
+	style_definition base =>
+		fg          => 'grey',   # Generic frame lines
+		linetype    => 'round',  # How to draw frames, 'round' means single with rounded corners
+		maximise_fg => 'green',  # Maximise button
+		close_fg    => 'red',    # Close button
+		title_fg    => 'white';
 
-style_definition base =>
-	fg          => 'grey',   # Generic frame lines
-	linetype    => 'round',  # How to draw frames, 'round' means single with rounded corners
-	maximise_fg => 'green',  # Maximise button
-	close_fg    => 'red',    # Close button
-	title_fg    => 'white';
+	style_definition ':active' =>
+		fg          => 'white',
+		maximise_fg => 'hi-green',
+		close_fg    => 'hi-red',
+		title_fg    => 'hi-green';
+}
 
-style_definition ':active' =>
-	fg          => 'white',
-	maximise_fg => 'hi-green',
-	close_fg    => 'hi-red',
-	title_fg    => 'hi-green';
+=head2 new
+
+=cut
 
 sub new {
 	my $class = shift;
@@ -197,12 +201,10 @@ sub format_label {
 }
 
 sub render_frame {
-	my $self = shift;
-	my $rb = shift;
-	my $target = shift;
+	my ($self, $rb, $target) = @_;
 	my $win = $self->window or return;
 
-	my $line_type = LINE_SINGLE; # $self->is_active ? LINE_DOUBLE : LINE_SINGLE;
+	my $line_type = $self->is_active ? LINE_DOUBLE : LINE_SINGLE;
 
 	if($win->left < $target->left) {
 		$rb->hline_at($win->top, $win->left, $target->left, $line_type);
@@ -328,3 +330,14 @@ sub frame_rects {
 }
 
 1;
+
+__END__
+
+=head1 AUTHOR
+
+Tom Molesworth <cpan@entitymodel.com>
+
+=head1 LICENSE
+
+Copyright Tom Molesworth 2012-2014. Licensed under the same terms as Perl itself.
+
