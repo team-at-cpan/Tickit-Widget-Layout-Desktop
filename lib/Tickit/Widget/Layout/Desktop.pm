@@ -9,33 +9,35 @@ our $VERSION = '0.001';
 
 =head1 NAME
 
-Tickit::Desktop -
+Tickit::Widget::Layout::Desktop - provides a holder for "desktop-like" widget behaviour
 
 =head1 SYNOPSIS
 
+# EXAMPLE: synopsis.pl
+
 =head1 DESCRIPTION
 
-=head1 METHODS
-
-=cut
-
-=pod
-
+Experimental release for a container that provides move/resize/minimize/maximize "window" behaviour.
 
 Constructed of:
 
 =over 4
 
-=item * ::Desktop::Window - the window implementation
+=item * L<Tickit::Widget::Layout::Desktop::Window> - the window implementation
 
-=item * ::Desktop - background desktop on which the
+=item * this class - background desktop on which the
 floats are displayed
-
-=item * ::Desktop::Taskbar - a subclass of statusbar which provides
-window lists and launchers (maybe)
 
 =back
 
+and maybe later:
+
+=over 4
+
+=item * ::Desktop::Taskbar - a subclass of statusbar which provides
+window lists and launchers
+
+=back
 
 =cut
 
@@ -43,14 +45,17 @@ use curry::weak;
 use Scalar::Util qw(refaddr);
 use List::Util qw(max);
 use Tickit::Utils qw(textwidth distribute);
+
 use Tickit::Widget::Layout::Desktop::Window;
 
-use constant CLEAR_BEFORE_RENDER => 0;
+=head1 METHODS
+
+=cut
 
 sub lines { 1 }
 sub cols { 1 }
 
-=head2 render
+=head2 render_to_rb
 
 Clears the exposed area. All rendering happens in the
 floating windows on top of this widget.
@@ -403,11 +408,17 @@ __END__
 
 =head1 SEE ALSO
 
+=over 4
+
+=item * L<Tickit::Widget::FloatBox> - eventually ::Desktop will probably start using FloatBox for the float management
+
+=back
+
 =head1 AUTHOR
 
 Tom Molesworth <cpan@perlsite.co.uk>
 
 =head1 LICENSE
 
-Copyright Tom Molesworth 2011. Licensed under the same terms as Perl itself.
+Copyright Tom Molesworth 2011-2014. Licensed under the same terms as Perl itself.
 
