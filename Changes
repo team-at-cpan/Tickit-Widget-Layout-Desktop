@@ -1,6 +1,10 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+	No new features.
+
+	Documentation updates:
+	* Provide a screenshot to make things slightly more obvious
 
 0.001     2014-08-16 18:15:28+01:00 Europe/London
 	Initial CPAN release
