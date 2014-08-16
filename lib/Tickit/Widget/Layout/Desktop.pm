@@ -57,11 +57,10 @@ floating windows on top of this widget.
 
 =cut
 
-sub render {
-	my $self = shift;
-	my %args = @_;
-	my $win = $self->window or return;
-	$win->clearrect($args{rect});
+sub render_to_rb {
+	my ($self, $rb, $rect) = @_;
+	$rb->eraserect($rect);
+	# Tickit::RenderBuffer
 }
 
 =head2 overlay
