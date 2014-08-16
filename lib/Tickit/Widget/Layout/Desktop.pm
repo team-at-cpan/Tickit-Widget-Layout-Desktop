@@ -13,7 +13,7 @@ Tickit::Widget::Layout::Desktop - provides a holder for "desktop-like" widget be
 
 =head1 SYNOPSIS
 
-# EXAMPLE: synopsis.pl
+# EXAMPLE: examples/synopsis.pl
 
 =head1 DESCRIPTION
 
