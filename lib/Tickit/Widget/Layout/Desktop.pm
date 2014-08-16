@@ -19,6 +19,12 @@ Tickit::Widget::Layout::Desktop - provides a holder for "desktop-like" widget be
 
 Experimental release for a container that provides move/resize/minimize/maximize "window" behaviour.
 
+=begin HTML
+
+<p><img src="http://tickit.perlsite.co.uk/cpan-screenshot/tickit-widget-layout-desktop1.gif" alt="Desktop widget in action" width="539" height="315"></p>
+
+=end HTML
+
 Constructed of:
 
 =over 4
