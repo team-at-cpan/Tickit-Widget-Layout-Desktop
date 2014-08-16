@@ -1,5 +1,5 @@
 package Tickit::Widget::Layout::Desktop;
-# ABSTRACT: 
+# ABSTRACT: desktop-like float management implementation for Tickit
 use strict;
 use warnings;
 
@@ -191,7 +191,6 @@ sub float_geom_changed {
 	# Start by working out what part of our current desktop
 	# has just been uncovered, and fire expose events at our top-level
 	# window for this area (for a move, it'll typically be up to two rectangles)
-	# area covered by the 
 	my $rs = Tickit::RectSet->new;
 	$rs->add($old);
 	$rs->subtract($w->window->rect);
@@ -300,7 +299,7 @@ sub reshape {
 	foreach my $w (@{$self->{widgets}}) {
 		my $subwin = $w->window or next;
 		$w->window->change_geometry(
-			(map int, 
+			(map int,
 				$subwin->top * $lines_ratio,
 				$subwin->left * $cols_ratio),
 			(map int($_) || 1,
