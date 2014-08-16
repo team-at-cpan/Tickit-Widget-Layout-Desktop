@@ -162,7 +162,7 @@ sub render_to_rb {
 	# This is a nasty hack - we want to know whether it's safe to draw
 	# rounded corners, so we start by checking whether we have any line
 	# cells already in place in the corners...
-#	my $cell = $rb->get_cell($y, $x);  
+#	my $cell = $rb->get_cell($y, $x);
 #	next CORNER unless $cell and my $linemask = $cell->linemask;
 #	my $corners = join "", grep { $linemask->$_ == LINE_SINGLE } qw( north south east west );
 
