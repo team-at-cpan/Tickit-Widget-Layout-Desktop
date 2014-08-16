@@ -5,6 +5,12 @@ use warnings;
 
 use parent qw(Tickit::WidgetRole::Movable Tickit::SingleChildWidget);
 
+=head1 NAME
+
+Tickit::Widget::Layout::Desktop - provides a holder for "desktop-like" widget behaviour
+
+=cut
+
 use Tickit::RenderBuffer qw(LINE_THICK LINE_SINGLE LINE_DOUBLE);
 use Tickit::Utils qw(textwidth);
 use Tickit::Style;
@@ -24,7 +30,7 @@ BEGIN {
 		title_fg    => 'hi-green';
 }
 
-=head2 new
+=head1 METHODS
 
 =cut
 
