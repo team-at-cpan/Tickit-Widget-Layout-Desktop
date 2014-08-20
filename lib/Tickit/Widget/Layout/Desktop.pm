@@ -283,6 +283,7 @@ sub reshape {
 	}
 	$self->{geometry} = { map { $_ => $win->$_ } @directions };
 
+# This will probably end up using Layout::Relative.
 #	my %buckets = map { $_ => [] } @directions;
 #	foreach my $w (@{$self->{widgets}}) {
 #		push @{$buckets{$_}}, { base => $w->window->$_, expand => 1 } for @directions;
