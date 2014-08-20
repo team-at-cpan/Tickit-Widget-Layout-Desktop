@@ -305,6 +305,12 @@ sub reshape {
 #	}
 }
 
+=head2 cascade
+
+Arrange all the windows in a cascade (first at 1,1, second at 2,2, etc.).
+
+=cut
+
 sub cascade {
 	my $self = shift;
 	my @windows = reverse @{$self->window->{child_windows}};
@@ -370,6 +376,12 @@ sub tile {
 		}
 	}
 }
+
+=head2 close_all
+
+Close all the windows.
+
+=cut
 
 sub close_all {
 	my $self = shift;
