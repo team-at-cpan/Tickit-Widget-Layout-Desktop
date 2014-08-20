@@ -21,6 +21,7 @@ BEGIN {
 		linetype    => 'round',  # How to draw frames, 'round' means single with rounded corners
 		maximise_fg => 'green',  # Maximise button
 		close_fg    => 'red',    # Close button
+		control_fg  => 'white',  # Control
 		title_fg    => 'white';
 
 	style_definition ':active' =>
