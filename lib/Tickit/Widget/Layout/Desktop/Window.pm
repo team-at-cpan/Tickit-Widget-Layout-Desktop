@@ -118,14 +118,37 @@ Returns $self.
 =cut
 
 sub with_rb {
-	my $self = shift;
-	my $rb = shift;
-	my $code = shift;
+	my ($self, $rb, $code) = @_;
 	$rb->save;
 	$code->($rb);
 	$rb->restore;
 	$self;
 }
+
+=head2 content_rect
+
+Represents the inner area of this window, i.e. the
+content without the frame.
+
+=cut
+
+sub content_rect {
+	my ($self) = @_;
+	my $win = $self->window;
+	$self->child->window->rect->translate(
+		$win->top,
+		$win->left
+	)
+}
+
+sub container { shift->{container} }
+
+my %override = (
+	southeast => 0x256D,
+	northeast => 0x2570,
+	southwest => 0x256E,
+	northwest => 0x256f,
+);
 
 =head2 render_to_rb
 
@@ -134,14 +157,15 @@ Returns $self.
 =cut
 
 sub render_to_rb {
-	my $self = shift;
-	my ($rb, $rect) = @_;
+	my ($self, $rb, $rect) = @_;
 	my $win = $self->window or return;
+	return unless $self->child->window;
+
+	# If the exposed area does not overlap the frame, bail out now
+	return if $self->content_rect->contains($rect);
 
 	# Use a default pen for drawing all the line-related pieces
 	$rb->setpen($self->get_style_pen);
-
-	# $rb->clear(Tickit::Pen->new(fg => 'white'));
 
 	# First, work out any line intersections for our border.
 	$self->with_rb($rb => sub {
@@ -153,7 +177,7 @@ sub render_to_rb {
 		# Ask our container to ask all other floating
 		# windows to render their frames on our context,
 		# so we join line segments where expected
-		$self->{container}->overlay($rb => $self);
+		$self->{container}->overlay($rb, $rect, $self);
 
 		# Restore our origin
 		# TODO would've thought ->restore should handle this?
@@ -166,14 +190,6 @@ sub render_to_rb {
 	# This is a nasty hack - we want to know whether it's safe to draw
 	# rounded corners, so we start by checking whether we have any line
 	# cells already in place in the corners...
-#	my $cell = $rb->get_cell($y, $x);
-#	next CORNER unless $cell and my $linemask = $cell->linemask;
-#	my $corners = join "", grep { $linemask->$_ == LINE_SINGLE } qw( north south east west );
-
-	my $tl = $rb->get_cell( 0,  0)->linemask;
-	my $tr = $rb->get_cell( 0, $w)->linemask;
-	my $bl = $rb->get_cell($h,  0)->linemask;
-	my $br = $rb->get_cell($h, $w)->linemask;
 
 	# ... then we render our actual border, possibly using a different style for
 	# active window...
@@ -325,7 +341,7 @@ sub reshape {
 	my $win = $self->window;
 
 	# Keep our frame info if we're just moving the window around
-	delete $self->{frame_rects} unless $self->{window_lines} == $win->lines && $self->{window_cols} == $win->cols;
+	delete $self->{frame_rects};# unless $self->{window_lines} == $win->lines && $self->{window_cols} == $win->cols;
 	$self->{window_lines} = $win->lines;
 	$self->{window_cols} = $win->cols;
 	$self->set_child_window
@@ -348,8 +364,7 @@ sub set_child_window {
          my $childwin = $window->make_sub( 1, 1, $lines - 2, $cols - 2 );
          $child->set_window( $childwin );
       }
-   }
-   else {
+   } else {
       if( $child->window ) {
          $child->set_window( undef );
       }
@@ -376,18 +391,132 @@ sub mark_inactive {
 sub expose_frame {
 	my $self = shift;
 	my $win = $self->window or return $self;
-	$win->expose($_) for $self->frame_rects;
+
+	my @rect = $self->frame_rects;
+	$win->expose($_) for @rect;
 	$self;
 }
 
 sub frame_rects {
 	my $self = shift;
 	@{ $self->{frame_rects} ||= [
-		Tickit::Rect->new(top => 0, left => 0, lines => 1, cols => $self->window->cols),
-		Tickit::Rect->new(top => 0, left => 0, lines => $self->window->lines, cols => 1),
-		Tickit::Rect->new(top => 0, left => $self->window->cols - 1, lines => $self->window->lines, cols => 1),
-		Tickit::Rect->new(top => $self->window->lines - 1, left => 0, lines => 1, cols => $self->window->cols),
+		# Tickit::Rect really is quite neat
+		$self->window->rect->subtract($self->content_rect)
 	] };
+}
+
+sub adjust_left {
+	my ($self, $delta) = @_;
+	my $rect = $self->window->rect;
+	my $cols = $rect->cols - $delta;
+	return if $cols < $self->MIN_WIDTH;
+	$self->window->change_geometry(
+		$rect->top,
+		$rect->left + $delta,
+		$rect->lines,
+		$cols,
+	)
+}
+sub adjust_right {
+	my ($self, $delta) = @_;
+	my $rect = $self->window->rect;
+	my $cols = $rect->cols + $delta;
+	return if $cols < $self->MIN_WIDTH;
+	$self->window->change_geometry(
+		$rect->top,
+		$rect->left,
+		$rect->lines,
+		$cols,
+	)
+}
+sub adjust_top {
+	my ($self, $delta) = @_;
+	my $rect = $self->window->rect;
+	my $lines = $rect->lines - $delta;
+	return if $lines < $self->MIN_HEIGHT;
+	$self->window->change_geometry(
+		$rect->top + $delta,
+		$rect->left,
+		$lines,
+		$rect->cols,
+	)
+}
+sub adjust_bottom {
+	my ($self, $delta) = @_;
+	my $rect = $self->window->rect;
+	my $lines = $rect->lines + $delta;
+	return if $lines < $self->MIN_HEIGHT;
+	$self->window->change_geometry(
+		$rect->top,
+		$rect->left,
+		$lines,
+		$rect->cols,
+	)
+}
+
+sub linked_widgets {
+	shift->{linked_widgets} ||= {}
+}
+
+=head2 change_geometry
+
+Override geometry changes to allow welding and constraints.
+
+We have a set of rules for each widget, of the followin form:
+
+ {
+  left => [
+   left => $w1,
+   right => $w2,
+  ],
+  top => [
+   top => $w2
+  ]
+ }
+
+If the left edge changes, the left edge of $w1 and the right edge of $w2 would move by the same amount.
+
+If the top changes, the top of $w2 would move by the same amount
+
+That's about it. The idea is that edges can be "joined", meaning that resizing applies to multiple widgets at once.
+
+=cut
+
+sub change_geometry {
+	my ($self, $top, $left, $lines, $cols) = @_;
+	my $deskwin = $self->container->window;
+
+	$left = 0 if $left < 0;
+	$top = 0 if $top < 0;
+
+	$lines = $deskwin->lines if $top < $self->window->top && $lines == $self->window->lines;
+#	$cols = $deskwin->cols if $left < $self->window->left && $cols == $self->window->cols;
+
+	$lines = $deskwin->lines - $top if $top + $lines > $deskwin->lines;
+	$cols = $deskwin->cols - $left if $left + $cols > $deskwin->cols;
+
+	my $rect = Tickit::Rect->new(
+		top => $top,
+		left => $left,
+		lines => $lines,
+		cols => $cols,
+	);
+
+	my $linked = $self->linked_widgets;
+	EDGE:
+	for my $edge (keys %$linked) {	
+		my $delta = $rect->$edge - $self->window->$edge or next EDGE;
+		my @target = @{$linked->{$edge} ||= []};
+		while(my ($k, $v) = splice @target, 0, 2) {
+			my $method = 'adjust_' . $k;
+			$v->$method(
+				$delta
+			);
+		}
+	}
+	$self->SUPER::change_geometry(
+		$top, $left, $lines, $cols
+	);
 }
 
 1;
