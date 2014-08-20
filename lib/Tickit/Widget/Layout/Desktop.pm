@@ -92,9 +92,7 @@ to check for intersections so we don't waste time drawing unrelated areas
 =cut
 
 sub overlay {
-	my $self = shift;
-	my $rb = shift;
-	my $exclude = shift;
+	my ($self, $rb, $rect, $exclude) = @_;
 	my $target = $exclude->window->rect;
 
 	# TODO change this when proper accessors are available
