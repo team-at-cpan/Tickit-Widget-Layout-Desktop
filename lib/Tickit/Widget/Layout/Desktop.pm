@@ -102,16 +102,17 @@ sub overlay {
 	delete $win_map{refaddr($exclude->window)};
 
 	# Each child widget, from back to front
+	CHILD:
 	foreach my $child (reverse grep defined, map $win_map{refaddr($_)}, @{$self->window->{child_windows}}) {
-		my $w = $child->window or next;
-		next unless $w->rect->intersects($target);
+		next CHILD unless my $w = $child->window;
+		next CHILD unless $w->rect->intersects($target);
 
 		# Clear out anything that would be under this window,
 		# so we don't draw lines that are obscured by upper
 		# layers
-		for my $l ($w->top..$w->bottom - 1) {
-			$rb->erase_at($l, $w->left + 1, $w->cols - 2);
-		}
+		$rb->eraserect(
+			$w->rect
+		);
 
 		# Let the child window render itself to the given
 		# context, since it knows more about styles than we do
