@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+0.003     2014-08-20 19:59:52+01:00 Europe/London
 	New features:
 	* Ability to join edges on windows for moving things in parallel
 	* Clamp-to-edge
