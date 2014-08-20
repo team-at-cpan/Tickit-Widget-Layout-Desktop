@@ -15,6 +15,8 @@ use Tickit::RenderBuffer qw(LINE_THICK LINE_SINGLE LINE_DOUBLE);
 use Tickit::Utils qw(textwidth);
 use Tickit::Style;
 
+use constant HAVE_RT98211_BUG => (Tickit::RenderBuffer->VERSION <= 0.46);
+
 BEGIN {
 	style_definition base =>
 		fg          => 'grey',   # Generic frame lines
@@ -180,62 +182,109 @@ sub render_to_rb {
 		thick => LINE_THICK,
 		double => LINE_DOUBLE,
 	}->{$self->get_style_values('linetype')};
-	$rb->hline_at( 0,  0, $w, $line);
-	$rb->hline_at($h,  0, $w, $line);
-	$rb->vline_at( 0, $h,  0, $line);
-	$rb->vline_at( 0, $h, $w, $line);
 
-	# ... and then we overdraw the corners, but only if we have
-	# since active border is currently double lines and there's no
-	# rounded equivalent there.
-	if(0 and $self->get_style_values('linetype') eq 'round') {
-		$rb->char_at( 0,  0, 0x256D) unless $tl == Tickit::RenderBuffer->LINE_SINGLE;
-		$rb->char_at($h,  0, 0x2570) unless $bl == Tickit::RenderBuffer->LINE_SINGLE;
-		$rb->char_at( 0, $w, 0x256E) unless $tr == Tickit::RenderBuffer->LINE_SINGLE;
-		$rb->char_at($h, $w, 0x256F) unless $br == Tickit::RenderBuffer->LINE_SINGLE;
+	# So we first render the frame. This will pick up any adjoining lines from
+	# our overlay, all being well.
+	$rb->linebox_at(0, $h, 0, $w, $line);
+
+	if($self->get_style_values('linetype') eq 'round') {
+		# ->get_cell is absolute (Tickit 0.46), so we need to apply an origin offset
+		# to look up our cells
+		my $origin = [0,0];
+		my $limit = [
+			$win->root->bottom,
+			$win->root->right
+		];
+		if(HAVE_RT98211_BUG) {
+			{ # not beautiful, but it's going away
+				my $ww = $win;
+				do {
+					$origin->[0] += $ww->rect->top;
+					$origin->[1] += $ww->rect->left;
+					$ww = $ww->parent;
+				} while $ww;
+			}
+		}
+
+		my @corner_char;
+		CORNER:
+		foreach my $corner ([0,0], [0,$w], [$h,0], [$h,$w]) {
+			my ($y, $x) = @$corner;
+			my $abs_y = $y + $origin->[0];
+			my $abs_x = $x + $origin->[1];
+			next CORNER if $abs_y >= $limit->[0] or $abs_x >= $limit->[1] or $abs_x < 0 or $abs_y < 0;
+
+			# Apply our window offset... note that ->get_cell will segfault if
+			# we're outside the render area, so the widget width had better be
+			# correct here.
+			my $cell = $rb->get_cell($abs_y, $abs_x);
+
+			# If we have a line segment here, ->linemask should be an object...
+			next CORNER unless $cell and my $linemask = $cell->linemask;
+
+			# ... which we map to a "corner" type
+			my $corners = join "", grep { $linemask->$_ == LINE_SINGLE } qw( north south east west );
+
+			push @corner_char, [
+				$y, $x, $override{$corners}, $cell->pen
+			] if exists $override{$corners};
+		}
+		# ... and finally we overdraw the corners.
+		$rb->char_at(@$_) for @corner_char;
 	}
 
 	# Then the title
 	my $txt = $self->format_label;
 	$rb->text_at(0, (1 + $w - textwidth($txt)) >> 1, $txt, $text_pen);
 
-	# and the icons for min/max/close, minimise isn't particularly useful so
-	# let's not bother with that one.
-	# $rb->text_at(0, $w - 3, "\N{U+238A}", Tickit::Pen->new(fg => 'hi-yellow'));
+	# and the icons for min/max/close.
+	# Minimise isn't particularly useful, so let's not bother with that one.
+	# $rb->text_at(0, $w - 5, "\N{U+238A}", Tickit::Pen->new(fg => 'hi-yellow'));
 	$rb->text_at(0, $w - 3, "\N{U+25CE}", $self->get_style_pen('maximise'));
 	$rb->text_at(0, $w - 1, "\N{U+2612}", $self->get_style_pen('close'));
+
+	$rb->text_at(0, 1, "[\N{U+25AA}]", $self->get_style_pen('control'));
 }
 
 sub format_label {
 	my $self = shift;
-	'[ ' . $self->label . ' ]';
+	' ' . $self->label . ' ';
 }
 
 sub render_frame {
 	my ($self, $rb, $target) = @_;
 	my $win = $self->window or return;
 
-	my $line_type = $self->is_active ? LINE_DOUBLE : LINE_SINGLE;
+	my $line_type = LINE_SINGLE; #LINE_DOUBLE; #$self->is_active ? LINE_DOUBLE : LINE_SINGLE;
 
-	if($win->left < $target->left) {
-		$rb->hline_at($win->top, $win->left, $target->left, $line_type);
-		$rb->hline_at($win->bottom - 1, $win->left, $target->left, $line_type);
-	}
-	if($win->right > $target->right) {
-		$rb->hline_at($win->top, $target->right - 1, $win->right - 1, $line_type);
-		$rb->hline_at($win->bottom - 1, $target->right - 1, $win->right - 1, $line_type);
-	}
-	if($win->top < $target->top) {
-		$rb->vline_at($win->top, $target->top, $win->left, $line_type);
-		$rb->vline_at($win->top, $target->top, $win->right - 1, $line_type);
-	}
-	if($win->bottom > $target->bottom) {
-		$rb->vline_at($target->bottom - 1, $win->bottom - 1, $win->left, $line_type);
-		$rb->vline_at($target->bottom - 1, $win->bottom - 1, $win->right - 1, $line_type);
-	}
+	$self->with_rb($rb, sub {
+		my $rb = shift;
+		# so we restrict our frame rendering to the area covered by the target...
+		$rb->clip($target);
 
-	my $txt = ' ' . $self->label . ' ';
-	$rb->text_at($win->left, $win->top + (($win->cols - textwidth($txt)) >> 1), $txt);
+		# then render all 4 edges, taking into account potential split where the
+		# target area goes. We want to render up to the target but not actually
+		# overlapping it, otherwise we'll end up with T junctions rather than
+		# corners. This all seems mildly inefficient and overcomplicated but
+		# calculating as Tickit::Rect overlap/subtract combinations was beyond
+		# me at the time of writing. Patches welcome.
+		if($win->left < $target->left) {
+			$rb->hline_at($win->top, $win->left, $target->left, $line_type);
+			$rb->hline_at($win->bottom - 1, $win->left, $target->left, $line_type);
+		}
+		if($win->right > $target->right) {
+			$rb->hline_at($win->top, $target->right - 1, $win->right - 1, $line_type);
+			$rb->hline_at($win->bottom - 1, $target->right - 1, $win->right - 1, $line_type);
+		}
+		if($win->top < $target->top) {
+			$rb->vline_at($win->top, $target->top, $win->left, $line_type);
+			$rb->vline_at($win->top, $target->top, $win->right - 1, $line_type);
+		}
+		if($win->bottom > $target->bottom) {
+			$rb->vline_at($target->bottom - 1, $win->bottom - 1, $win->left, $line_type);
+			$rb->vline_at($target->bottom - 1, $win->bottom - 1, $win->right - 1, $line_type);
+		}
+	});
 }
 
 sub is_active { shift->{active} ? 1 : 0 }
