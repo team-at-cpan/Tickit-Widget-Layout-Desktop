@@ -56,6 +56,7 @@ Returns true if this location is the maximise button.
 sub position_is_maximise {
 	my ($self, $line, $col) = @_;
 	my $win = $self->window or return;
+	# what hardcoded madness is this
 	return 1 if $line == 0 && $col == $win->cols - 4;
 	return 0;
 }
@@ -69,10 +70,10 @@ Returns true if this location is the close button.
 sub position_is_close {
 	my ($self, $line, $col) = @_;
 	my $win = $self->window or return;
+	# again I say with the numbers
 	return 1 if $line == 0 && $col == $win->cols - 2;
 	return 0;
 }
-
 
 =head2 mouse_press
 
