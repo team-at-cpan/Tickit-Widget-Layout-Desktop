@@ -3,7 +3,7 @@ package Tickit::Widget::Layout::Desktop;
 use strict;
 use warnings;
 
-use parent qw(Tickit::Widget);
+use parent qw(Tickit::ContainerWidget);
 
 our $VERSION = '0.003';
 
@@ -54,6 +54,9 @@ use Tickit::Utils qw(textwidth distribute);
 
 use Tickit::Widget::Layout::Desktop::Window;
 
+use constant CAN_FOCUS => 1;
+#use Tickit::ContainerWidget
+
 =head1 METHODS
 
 =cut
@@ -73,6 +76,8 @@ sub render_to_rb {
 	$rb->eraserect($rect);
 	# Tickit::RenderBuffer
 }
+
+sub children { @{shift->{widgets}} }
 
 =head2 overlay
 
@@ -386,6 +391,13 @@ Close all the windows.
 sub close_all {
 	my $self = shift;
 	$_->close for reverse @{$self->window->{child_windows}};
+}
+
+# Tickit::Widget
+sub focus_next {
+	my ($self) = shift;
+	warn "focus next: @_\n";
+	$self->SUPER::focus_next(@_)
 }
 
 1;

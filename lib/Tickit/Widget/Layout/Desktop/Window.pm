@@ -31,6 +31,11 @@ BEGIN {
 		maximise_fg => 'hi-green',
 		close_fg    => 'hi-red',
 		title_fg    => 'hi-green';
+
+	style_definition ':focus-child' =>
+		fg          => 'hi-green';
+	style_definition ':focus' =>
+		fg          => 'hi-red';
 }
 
 =head1 METHODS
