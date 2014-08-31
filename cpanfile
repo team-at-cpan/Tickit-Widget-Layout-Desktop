@@ -1,4 +1,5 @@
 requires 'parent', 0;
+requires 'List::Util', '>= 1.29';
 requires 'Tickit', '>= 0.46';
 requires 'Tickit::Widget', 0;
 requires 'Tickit::Widget::Menu', 0;

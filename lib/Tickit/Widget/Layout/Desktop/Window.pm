@@ -11,7 +11,7 @@ Tickit::Widget::Layout::Desktop - provides a holder for "desktop-like" widget be
 
 =cut
 
-use curry;
+use curry::weak;
 use Tickit::RenderBuffer qw(LINE_THICK LINE_SINGLE LINE_DOUBLE);
 use Tickit::Utils qw(textwidth);
 use Tickit::Style;
