@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+0.004     2014-08-31 01:22:30+01:00 Europe/London
 	New features:
 	* Menu popup for max/min/weld/close features
 	* Restore windows after maximise
