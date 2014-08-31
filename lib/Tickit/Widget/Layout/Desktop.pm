@@ -5,7 +5,7 @@ use warnings;
 
 use parent qw(Tickit::ContainerWidget);
 
-our $VERSION = '0.003';
+our $VERSION = '0.004';
 
 =head1 NAME
 
@@ -49,10 +49,14 @@ window lists and launchers
 
 use curry::weak;
 use Scalar::Util qw(refaddr);
-use List::Util qw(max);
+use List::Util qw(max pairmap);
 use Tickit::Utils qw(textwidth distribute);
 
+use Tickit::Widget::Menu;
+use Tickit::Widget::Menu::Item;
+
 use Tickit::Widget::Layout::Desktop::Window;
+use Variable::Disposition;
 
 use constant CAN_FOCUS => 1;
 #use Tickit::ContainerWidget
@@ -186,6 +190,38 @@ sub create_panel {
 	$self->{extents}{refaddr $float} = $float->rect->translate(0,0);
 	$float->set_on_geom_changed($self->curry::weak::float_geom_changed($w));
 	$w
+}
+
+sub show_control {
+	my ($self, $panel, @items) = @_;
+	my $win = $self->window or return;
+	my $panel_win = $panel->window;
+
+	my $menu;
+	my @menu_items = pairmap {
+		{ # https://rt.cpan.org/Ticket/Display.html?id=95409
+			my $code = $b;
+			Tickit::Widget::Menu::Item->new(
+				name => $a,
+				on_activate => sub {
+					$menu->dismiss;
+					$win->tickit->later(sub {
+						$code->();
+						dispose $menu;
+					});
+				}
+			)
+		}
+	} @items;
+
+	$menu = Tickit::Widget::Menu->new(
+		items => \@menu_items,
+	);
+	$menu->popup(
+		$panel_win,
+		1,
+		1
+	);
 }
 
 sub float_geom_changed {

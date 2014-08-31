@@ -11,6 +11,7 @@ Tickit::Widget::Layout::Desktop - provides a holder for "desktop-like" widget be
 
 =cut
 
+use curry;
 use Tickit::RenderBuffer qw(LINE_THICK LINE_SINGLE LINE_DOUBLE);
 use Tickit::Utils qw(textwidth);
 use Tickit::Style;
@@ -80,6 +81,66 @@ sub position_is_close {
 	return 0;
 }
 
+sub position_is_control {
+	my ($self, $line, $col) = @_;
+	my $win = $self->window or return;
+	# more numbers!
+	return 1 if $line == 0 && $col >= 1 && $col <= 3;
+	return 0;
+}
+
+sub action_close {
+	my ($self) = @_;
+	# Close button... probably need some way to indicate when
+	# this happens, Tickit::Window doesn't appear to have set_on_closed ?
+	$self->window->clear;
+	$self->window->close;
+}
+
+sub action_restore {
+	my ($self) = @_;
+	my $win = $self->window or return 1;
+	return 1 unless $self->{maximised};
+	$win->change_geometry(
+		$self->{maximised}->top,
+		$self->{maximised}->left,
+		$self->{maximised}->lines,
+		$self->{maximised}->cols,
+	);
+	delete $self->{maximised};
+}
+
+sub action_maximise {
+	my ($self) = @_;
+	my $win = $self->window or return 1;
+	return 1 if $self->{maximised};
+	$self->{maximised} = $win->rect;
+	$win->change_geometry(
+		0,
+		0,
+		$win->parent->lines,
+		$win->parent->cols,
+	);
+}
+
+sub action_control {
+	my ($self) = @_;
+	$self->{container}->show_control(
+		$self,
+		$self->{maximised}
+		? ('Restore' => $self->curry::weak::action_restore)
+		: ('Maximise' => $self->curry::weak::action_maximise),
+		'Minimise' => $self->curry::weak::action_minimise,
+		'Weld'     => $self->curry::weak::action_weld,
+		'Unweld'   => $self->curry::weak::action_unweld,
+		'On top'   => sub {  },
+		'Close'    => $self->curry::weak::action_close,
+	);
+}
+
+sub action_weld { }
+sub action_unweld { }
+
 =head2 mouse_press
 
 Override mouse click events to mark this window as active
@@ -94,19 +155,13 @@ sub mouse_press {
 	my ($line, $col) = @_;
 	$self->{container}->make_active($self);
 	if($self->position_is_close($line, $col)) {
-		# Close button... probably need some way to indicate when
-		# this happens, Tickit::Window doesn't appear to have set_on_closed ?
-		$self->window->clear;
-		$self->window->close;
+		$self->action_close;
 		return 1;
 	} elsif($self->position_is_maximise($line, $col)) {
-		my $win = $self->window or return 1;
-		$win->change_geometry(
-			0,
-			0,
-			$win->parent->lines,
-			$win->parent->cols,
-		);
+		$self->action_maximise;
+		return 1;
+	} elsif($self->position_is_control($line, $col)) {
+		$self->action_control;
 		return 1;
 	} else {
 		$self->SUPER::mouse_press(@_)
@@ -489,6 +544,9 @@ That's about it. The idea is that edges can be "joined", meaning that resizing a
 
 sub change_geometry {
 	my ($self, $top, $left, $lines, $cols) = @_;
+
+	delete $self->{maximised};
+
 	my $deskwin = $self->container->window;
 
 	$left = 0 if $left < 0;
