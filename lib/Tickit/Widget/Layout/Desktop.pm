@@ -173,10 +173,10 @@ sub create_panel {
 	my $win = $self->window or return;
 
 	my $float = $win->make_float(
-		$args{top},
-		$args{left},
-		$args{lines},
-		$args{cols},
+		$args{top} //= 2,
+		$args{left} //= 2,
+		$args{lines} //= 16,
+		$args{cols} //= 30,
 	);
 
 	my $w = ($args{subclass} || 'Tickit::Widget::Layout::Desktop::Window')->new(
