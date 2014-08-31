@@ -20,9 +20,12 @@ my %WriteMakefileArgs = (
   "LICENSE" => "perl",
   "NAME" => "Tickit::Widget::Layout::Desktop",
   "PREREQ_PM" => {
+    "List::Util" => "1.29",
     "Tickit" => "0.46",
     "Tickit::Widget" => 0,
+    "Tickit::Widget::Menu" => 0,
     "Tickit::WidgetRole::Movable" => "0.002",
+    "Variable::Disposition" => 0,
     "curry::weak" => 0,
     "parent" => 0
   },
@@ -33,7 +36,7 @@ my %WriteMakefileArgs = (
     "Test::CheckDeps" => "0.010",
     "Test::More" => "0.98"
   },
-  "VERSION" => "0.003",
+  "VERSION" => "0.004",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -44,11 +47,14 @@ my %FallbackPrereqs = (
   "File::Spec" => 0,
   "IO::Handle" => 0,
   "IPC::Open3" => 0,
+  "List::Util" => "1.29",
   "Test::CheckDeps" => "0.010",
   "Test::More" => "0.98",
   "Tickit" => "0.46",
   "Tickit::Widget" => 0,
+  "Tickit::Widget::Menu" => 0,
   "Tickit::WidgetRole::Movable" => "0.002",
+  "Variable::Disposition" => 0,
   "curry::weak" => 0,
   "parent" => 0
 );
