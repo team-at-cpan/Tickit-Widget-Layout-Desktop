@@ -1,6 +1,12 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+	No new features.
+
+	Bugs fixed:
+	* Stick-to-bottom-right behaviour - was using the wrong value for lines,
+	causing windows to leap to full height occasionally for no good reason
+	* Panels now get a default position if none provide in ->create_panel
 
 0.004     2014-08-31 01:22:30+01:00 Europe/London
 	New features:
