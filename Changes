@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+0.006     2015-01-24 14:00:26+00:00 Europe/London
 	New features:
 	* New panels can be given position in %, and there is now suppport for
 	'right' and 'bottom' attributes (distance from bottom and right of the
