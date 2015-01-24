@@ -256,9 +256,9 @@ sub render_to_rb {
 	# ... then we render our actual border, possibly using a different style for
 	# active window...
 	my $line = {
-		round => LINE_SINGLE,
+		round  => LINE_SINGLE,
 		single => LINE_SINGLE,
-		thick => LINE_THICK,
+		thick  => LINE_THICK,
 		double => LINE_DOUBLE,
 	}->{$self->get_style_values('linetype')};
 
