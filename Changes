@@ -1,6 +1,12 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+	New features:
+	* New panels can be given position in %, and there is now suppport for
+	'right' and 'bottom' attributes (distance from bottom and right of the
+	desktop, respectively)
+	* Disabled rounded corners, since ->get_cell has changed in newer Tickit
+	versions
 
 0.005     2014-08-31 15:00:19+01:00 Europe/London
 	No new features.
