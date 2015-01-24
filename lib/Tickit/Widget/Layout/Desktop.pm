@@ -59,6 +59,7 @@ use Tickit::Widget::Layout::Desktop::Window;
 use Variable::Disposition;
 
 use constant CAN_FOCUS => 1;
+use constant WIDGET_PEN_FROM_STYLE => 1;
 #use Tickit::ContainerWidget
 
 =head1 METHODS
