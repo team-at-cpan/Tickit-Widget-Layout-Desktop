@@ -17,6 +17,7 @@ use Tickit::Utils qw(textwidth);
 use Tickit::Style;
 
 use constant HAVE_RT98211_BUG => (Tickit::RenderBuffer->VERSION <= 0.46);
+use constant WIDGET_PEN_FROM_STYLE => 1;
 
 BEGIN {
 	style_definition base =>
