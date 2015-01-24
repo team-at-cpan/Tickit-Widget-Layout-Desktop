@@ -467,7 +467,6 @@ sub close_all {
 # Tickit::Widget
 sub focus_next {
 	my ($self) = shift;
-	warn "focus next: @_\n";
 	$self->SUPER::focus_next(@_)
 }
 
