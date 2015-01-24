@@ -324,12 +324,15 @@ sub render_to_rb {
 	$rb->text_at(0, (1 + $w - textwidth($txt)) >> 1, $txt, $text_pen);
 
 	# and the icons for min/max/close.
-	# Minimise isn't particularly useful, so let's not bother with that one.
-	# $rb->text_at(0, $w - 5, "\N{U+238A}", Tickit::Pen->new(fg => 'hi-yellow'));
-	$rb->text_at(0, $w - 3, "\N{U+25CE}", $self->get_style_pen('maximise'));
-	$rb->text_at(0, $w - 1, "\N{U+2612}", $self->get_style_pen('close'));
+	$rb->text_at(0, $w - 3, " ", $self->get_style_pen('maximise'));
+	$rb->text_at(0, $w - 1, " ", $self->get_style_pen('maximise'));
+	$rb->text_at(0, $w - 4, "\N{U+25CE}", $self->get_style_pen('maximise'));
+	$rb->text_at(0, $w - 2, "\N{U+2612}", $self->get_style_pen('close'));
 
 	$rb->text_at(0, 1, "[\N{U+25AA}]", $self->get_style_pen('control'));
+
+	# Minimise isn't particularly useful, so let's not bother with that one.
+	# $rb->text_at(0, $w - 5, "\N{U+238A}", Tickit::Pen->new(fg => 'hi-yellow'));
 }
 
 sub format_label {
