@@ -231,9 +231,10 @@ sub render_to_rb {
 	# First, work out any line intersections for our border.
 	$self->with_rb($rb => sub {
 		my $rb = shift;
+		my ($top, $left) = ($win->top, $win->left);
 
 		# We'll be rendering relative to the container
-		$rb->translate(-$win->top, -$win->left);
+		$rb->translate(-$top, -$left);
 
 		# Ask our container to ask all other floating
 		# windows to render their frames on our context,
@@ -242,7 +243,7 @@ sub render_to_rb {
 
 		# Restore our origin
 		# TODO would've thought ->restore should handle this?
-		$rb->translate($win->top, $win->left);
+		$rb->translate($top, $left);
 	});
 
 	my ($w, $h) = map $win->$_ - 1, qw(cols lines);
