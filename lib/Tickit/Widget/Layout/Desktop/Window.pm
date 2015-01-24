@@ -266,7 +266,7 @@ sub render_to_rb {
 	# our overlay, all being well.
 	$rb->linebox_at(0, $h, 0, $w, $line);
 
-	if($self->get_style_values('linetype') eq 'round') {
+	if(0 && $self->get_style_values('linetype') eq 'round') {
 		# ->get_cell is absolute (Tickit 0.46), so we need to apply an origin offset
 		# to look up our cells
 		my $origin = [0,0];
@@ -296,7 +296,14 @@ sub render_to_rb {
 			# Apply our window offset... note that ->get_cell will segfault if
 			# we're outside the render area, so the widget width had better be
 			# correct here.
-			my $cell = $rb->get_cell($abs_y, $abs_x);
+			$abs_y -= $win->abs_top;
+			#$abs_x -= $win->abs_left;
+			warn "will getcell for $abs_y, $abs_x with " . $win->lines . ", " . $win->cols . " and offset " . $win->abs_top . "\n";
+			my $cell = eval { $rb->get_cell($abs_y, $abs_x); } // do {
+
+				die $@;
+			};
+			warn "success - cell $cell, @$cell\n";
 
 			# If we have a line segment here, ->linemask should be an object...
 			next CORNER unless $cell and my $linemask = $cell->linemask;
