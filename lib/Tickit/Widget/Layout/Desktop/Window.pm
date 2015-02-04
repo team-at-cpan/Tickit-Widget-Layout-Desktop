@@ -16,7 +16,6 @@ use Tickit::RenderBuffer qw(LINE_THICK LINE_SINGLE LINE_DOUBLE);
 use Tickit::Utils qw(textwidth);
 use Tickit::Style;
 
-use constant HAVE_RT98211_BUG => (Tickit::RenderBuffer->VERSION <= 0.46);
 use constant WIDGET_PEN_FROM_STYLE => 1;
 
 BEGIN {
@@ -280,12 +279,7 @@ sub render_to_rb {
 			# Apply our window offset... note that ->get_cell will segfault if
 			# we're outside the render area, so the widget width had better be
 			# correct here.
-			warn "will getcell for $y, $x with " . $win->lines . ", " . $win->cols . " and offset " . $win->top . "\n";
-			my $cell = eval { $rb->get_cell($y, $x); } // do {
-
-				die $@;
-			};
-			warn "success - cell $cell, @$cell\n";
+			my $cell = eval { $rb->get_cell($y, $x); };
 
 			# If we have a line segment here, ->linemask should be an object...
 			next CORNER unless $cell and my $linemask = $cell->linemask;
@@ -402,27 +396,26 @@ sub reshape {
 }
 
 sub set_child_window {
-   my $self = shift;
+	my $self = shift;
 
-   my $window = $self->window or return;
-   my $child  = $self->child  or return;
+	my $window = $self->window or return;
+	my $child  = $self->child  or return;
 
-   my $lines = $window->lines;
-   my $cols  = $window->cols;
+	my $lines = $window->lines;
+	my $cols  = $window->cols;
 
-   if( $lines > 2 and $cols > 2 ) {
-      if( my $childwin = $child->window ) {
-         $childwin->change_geometry( 1, 1, $lines - 2, $cols - 2 );
-      }
-      else {
-         my $childwin = $window->make_sub( 1, 1, $lines - 2, $cols - 2 );
-         $child->set_window( $childwin );
-      }
-   } else {
-      if( $child->window ) {
-         $child->set_window( undef );
-      }
-   }
+	if( $lines > 2 and $cols > 2 ) {
+		if( my $childwin = $child->window ) {
+			$childwin->change_geometry( 1, 1, $lines - 2, $cols - 2 );
+		} else {
+			my $childwin = $window->make_sub( 1, 1, $lines - 2, $cols - 2 );
+			$child->set_window( $childwin );
+		}
+	} else {
+		if( $child->window ) {
+			$child->set_window( undef );
+		}
+	}
 }
 
 sub mark_active {
