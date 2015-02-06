@@ -464,6 +464,17 @@ sub close_all {
 	$_->close for reverse @{$self->window->{child_windows}};
 }
 
+sub close_panel {
+	my ($self, $panel) = @_;
+	my $rect = $panel->window->rect;
+	my $addr = refaddr($panel);
+	List::UtilsBy::extract_by { refaddr($_) == $addr }@{ $self->{widgets} };
+	$panel->window->close;
+	$self->window->tickit->later(sub {
+		$self->window->expose($rect);
+	})
+}
+
 # Tickit::Widget
 sub focus_next {
 	my ($self) = shift;
