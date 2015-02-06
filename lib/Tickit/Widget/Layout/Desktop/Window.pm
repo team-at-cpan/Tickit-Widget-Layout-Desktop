@@ -522,7 +522,7 @@ sub linked_widgets {
 
 Override geometry changes to allow welding and constraints.
 
-We have a set of rules for each widget, of the followin form:
+We have a set of rules for each widget, of the following form:
 
  {
   left => [
