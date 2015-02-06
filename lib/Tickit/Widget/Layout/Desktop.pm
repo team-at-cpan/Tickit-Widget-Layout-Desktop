@@ -7,7 +7,7 @@ use utf8;
 
 use parent qw(Tickit::ContainerWidget);
 
-our $VERSION = '0.008';
+our $VERSION = '0.009';
 
 =head1 NAME
 
@@ -322,6 +322,54 @@ sub make_active {
 	$_->mark_inactive for grep $_->is_active, @{$self->{widgets}};
 	$child->window->raise_to_front;
 	$child->mark_active;
+}
+
+=head2 weld
+
+"Welds" edges of windows together.
+
+Takes 4 parameters:
+
+=over 4
+
+=item * Source widget edge
+
+=item * Source widget
+
+=item * Destination edge
+
+=item * Destination widget
+
+=back
+
+For example:
+
+ $desktop->weld(
+  right => $left_panel,
+  left  => $right_panel,
+ );
+
+Given a two-panel layout, this would mean any changes to the right edge of the panel on the
+left would adjust the left edge of the panel on the right, and vice versa.
+
+As you increase the size of the left panel, the right panel shrinks, so instead of the normal
+behaviour where the widget on the left would start to overlap the one on the right, this maintains
+the relative positioning by resizing the target widget. This can be used to provide movable dividers
+between desktop panels, allowing temporary resize without disrupting the layout.
+
+Returns C< $self > for chaining.
+
+=cut
+
+sub weld {
+	my ($self, $src_edge, $src_widget, $dst_edge, $dst_widget) = @_;
+	my ($src) = grep { refaddr($src_widget) == refaddr($_->child) } @{$self->{widgets}}
+		or die "src not found";
+	my ($dst) = grep { refaddr($dst_widget) == refaddr($_->child) } @{$self->{widgets}}
+		or die "dst not found";
+	push @{$src->{linked_widgets}{$src_edge}}, $dst_edge => $dst;
+	push @{$dst->{linked_widgets}{$dst_edge}}, $src_edge => $src;
+	$self;
 }
 
 =head2 reshape
