@@ -94,7 +94,6 @@ sub action_close {
 	my ($self) = @_;
 	# Close button... probably need some way to indicate when
 	# this happens, Tickit::Window doesn't appear to have set_on_closed ?
-	$self->window->clear;
 	$self->window->close;
 }
 
