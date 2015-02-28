@@ -93,7 +93,13 @@ sub action_close {
 	my ($self) = @_;
 	# Close button... probably need some way to indicate when
 	# this happens, Tickit::Window doesn't appear to have set_on_closed ?
-	$self->window->close;
+	$self->close;
+}
+
+sub close {
+	my ($self) = @_;
+	$self->{container}->close_panel($self);
+	$self
 }
 
 sub action_restore {
@@ -108,6 +114,8 @@ sub action_restore {
 	);
 	delete $self->{maximised};
 }
+
+sub parent { shift->{container} }
 
 sub action_maximise {
 	my ($self) = @_;
@@ -388,7 +396,7 @@ sub reshape {
 	my $self = shift;
 	my $win = $self->window;
 
-	# Keep our frame info if we're just moving the window around
+	# Keep our frame info if we're just moving the window around?
 	delete $self->{frame_rects};# unless $self->{window_lines} == $win->lines && $self->{window_cols} == $win->cols;
 	$self->{window_lines} = $win->lines;
 	$self->{window_cols} = $win->cols;
@@ -398,20 +406,25 @@ sub reshape {
 sub set_child_window {
 	my $self = shift;
 
+#	warn "set child window for $self\n";
 	my $window = $self->window or return;
 	my $child  = $self->child  or return;
 
 	my $lines = $window->lines;
 	my $cols  = $window->cols;
 
+#	warn "* $lines x $cols\n";
 	if( $lines > 2 and $cols > 2 ) {
 		if( my $childwin = $child->window ) {
+#	warn "* geom change\n";
 			$childwin->change_geometry( 1, 1, $lines - 2, $cols - 2 );
 		} else {
+#	warn "* new sub\n";
 			my $childwin = $window->make_sub( 1, 1, $lines - 2, $cols - 2 );
 			$child->set_window( $childwin );
 		}
 	} else {
+#		warn "* too small, clear\n";
 		if( $child->window ) {
 			$child->set_window( undef );
 		}
