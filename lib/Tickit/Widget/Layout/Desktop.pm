@@ -3,6 +3,8 @@ package Tickit::Widget::Layout::Desktop;
 use strict;
 use warnings;
 
+use utf8;
+
 use parent qw(Tickit::ContainerWidget);
 
 our $VERSION = '0.005';
@@ -173,11 +175,31 @@ sub create_panel {
 	my %args = @_;
 	my $win = $self->window or return;
 
+	# Normalise percentages
+	$args{$_} = $self->horizontal($win, $args{$_}) for grep exists $args{$_}, qw(left right cols);
+	$args{$_} = $self->vertical($win, $args{$_})   for grep exists $args{$_}, qw(top bottom lines);
+
+	$args{bottom} = $win->lines - $args{bottom} if exists $args{bottom};
+	$args{right} = $win->cols - $args{right} if exists $args{right};
+
+	# Extrapolate coördinates to ensure we have top+lines
+	$args{top}   //= delete($args{bottom}) - $args{lines};
+	$args{lines} //= delete($args{bottom}) - $args{top};
+
+	# Extrapolate coördinates to ensure we have left+cols
+	$args{left}  //= delete($args{right}) - $args{cols};
+	$args{cols}  //= delete($args{right}) - $args{left};
+
+	$args{top} //= 2;
+	$args{left} //= 2;
+	$args{lines} ||= 10;
+	$args{cols} ||= 10;
+
 	my $float = $win->make_float(
-		$args{top} //= 2,
-		$args{left} //= 2,
-		$args{lines} //= 16,
-		$args{cols} //= 30,
+		$args{top},
+		$args{left},
+		$args{lines},
+		$args{cols},
 	);
 
 	my $w = ($args{subclass} || 'Tickit::Widget::Layout::Desktop::Window')->new(
@@ -191,6 +213,18 @@ sub create_panel {
 	$self->{extents}{refaddr $float} = $float->rect->translate(0,0);
 	$float->set_on_geom_changed($self->curry::weak::float_geom_changed($w));
 	$w
+}
+
+sub horizontal {
+	my ($self, $win, $v) = @_;
+	$v = $1 * $win->cols if $v =~ /(-?\d+(?:\.\d*)?)%/;
+	$v
+}
+
+sub vertical {
+	my ($self, $win, $v) = @_;
+	$v = $1 * $win->lines if $v =~ /(-?\d+(?:\.\d*)?)%/;
+	$v
 }
 
 sub show_control {
