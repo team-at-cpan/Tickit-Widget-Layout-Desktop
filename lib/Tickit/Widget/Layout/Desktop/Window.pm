@@ -265,40 +265,23 @@ sub render_to_rb {
 	# our overlay, all being well.
 	$rb->linebox_at(0, $h, 0, $w, $line);
 
-	if(0 && $self->get_style_values('linetype') eq 'round') {
-		# ->get_cell is absolute (Tickit 0.46), so we need to apply an origin offset
-		# to look up our cells
-		my $origin = [0,0];
+	if($self->get_style_values('linetype') eq 'round') {
 		my $limit = [
 			$win->root->bottom,
 			$win->root->right
 		];
-		if(HAVE_RT98211_BUG) {
-			{ # not beautiful, but it's going away
-				my $ww = $win;
-				do {
-					$origin->[0] += $ww->rect->top;
-					$origin->[1] += $ww->rect->left;
-					$ww = $ww->parent;
-				} while $ww;
-			}
-		}
 
 		my @corner_char;
 		CORNER:
 		foreach my $corner ([0,0], [0,$w], [$h,0], [$h,$w]) {
 			my ($y, $x) = @$corner;
-			my $abs_y = $y + $origin->[0];
-			my $abs_x = $x + $origin->[1];
-			next CORNER if $abs_y >= $limit->[0] or $abs_x >= $limit->[1] or $abs_x < 0 or $abs_y < 0;
+			next CORNER if $y >= $limit->[0] or $x >= $limit->[1] or $x < 0 or $y < 0;
 
 			# Apply our window offset... note that ->get_cell will segfault if
 			# we're outside the render area, so the widget width had better be
 			# correct here.
-			$abs_y -= $win->abs_top;
-			#$abs_x -= $win->abs_left;
-			warn "will getcell for $abs_y, $abs_x with " . $win->lines . ", " . $win->cols . " and offset " . $win->abs_top . "\n";
-			my $cell = eval { $rb->get_cell($abs_y, $abs_x); } // do {
+			warn "will getcell for $y, $x with " . $win->lines . ", " . $win->cols . " and offset " . $win->top . "\n";
+			my $cell = eval { $rb->get_cell($y, $x); } // do {
 
 				die $@;
 			};
