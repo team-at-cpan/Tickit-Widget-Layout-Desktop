@@ -22,7 +22,7 @@ my %WriteMakefileArgs = (
   "NAME" => "Tickit::Widget::Layout::Desktop",
   "PREREQ_PM" => {
     "List::Util" => "1.29",
-    "Tickit" => "0.46",
+    "Tickit" => "0.48",
     "Tickit::Widget" => 0,
     "Tickit::Widget::Menu" => 0,
     "Tickit::WidgetRole::Movable" => "0.002",
@@ -37,7 +37,7 @@ my %WriteMakefileArgs = (
     "Test::CheckDeps" => "0.010",
     "Test::More" => "0.98"
   },
-  "VERSION" => "0.006",
+  "VERSION" => "0.007",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -52,7 +52,7 @@ my %FallbackPrereqs = (
   "List::Util" => "1.29",
   "Test::CheckDeps" => "0.010",
   "Test::More" => "0.98",
-  "Tickit" => "0.46",
+  "Tickit" => "0.48",
   "Tickit::Widget" => 0,
   "Tickit::Widget::Menu" => 0,
   "Tickit::WidgetRole::Movable" => "0.002",
