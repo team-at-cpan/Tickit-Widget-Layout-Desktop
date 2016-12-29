@@ -33,8 +33,7 @@ Constructed of:
 
 =item * L<Tickit::Widget::Layout::Desktop::Window> - the window implementation
 
-=item * this class - background desktop on which the
-floats are displayed
+=item * this class - background desktop on which the floats are displayed
 
 =back
 
@@ -81,7 +80,6 @@ floating windows on top of this widget.
 sub render_to_rb {
 	my ($self, $rb, $rect) = @_;
 	$rb->eraserect($rect);
-	# Tickit::RenderBuffer
 }
 
 sub children { @{shift->{widgets}} }
@@ -548,5 +546,5 @@ Tom Molesworth <TEAM@cpan.org>
 
 =head1 LICENSE
 
-Copyright Tom Molesworth 2011-2015. Licensed under the same terms as Perl itself.
+Copyright Tom Molesworth 2011-2016. Licensed under the same terms as Perl itself.
 
