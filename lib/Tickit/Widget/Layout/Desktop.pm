@@ -211,7 +211,7 @@ sub create_panel {
 
 	# Need to redraw our window if position or size change
 	$self->{extents}{refaddr $float} = $float->rect->translate(0,0);
-	$float->set_on_geom_changed($self->curry::weak::float_geom_changed($w));
+	$float->bind_event(geom_changed => $self->curry::weak::float_geom_changed($w));
 	$w
 }
 
