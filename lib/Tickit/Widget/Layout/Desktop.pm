@@ -201,6 +201,7 @@ sub create_panel {
 		$args{lines},
 		$args{cols},
 	);
+	$float->cursor_at(0,0);
 
 	my $w = ($args{subclass} || 'Tickit::Widget::Layout::Desktop::Window')->new(
 		container => $self,
