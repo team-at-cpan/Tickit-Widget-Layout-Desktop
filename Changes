@@ -1,6 +1,12 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+	No new features.
+
+	Deprecation fixes:
+	* Use ->bind_event instead of ->on_geom_changed, for newer Tickit versions
+	* Set cursor position explicitly in new panes, since without this we tend
+	to trigger warnings on focus change
 
 0.009     2015-02-06 20:09:42+00:00 Europe/London
 	New features:

@@ -1,6 +1,6 @@
 requires 'parent', 0;
 requires 'List::Util', '>= 1.29';
-requires 'Tickit', '>= 0.48';
+requires 'Tickit', '>= 0.60';
 requires 'Tickit::Widget', 0;
 requires 'Tickit::Widget::Menu', 0;
 requires 'Variable::Disposition', 0;
