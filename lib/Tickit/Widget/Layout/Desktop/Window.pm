@@ -5,6 +5,8 @@ use warnings;
 
 use parent qw(Tickit::WidgetRole::Movable Tickit::SingleChildWidget);
 
+# VERSION
+#
 =head1 NAME
 
 Tickit::Widget::Layout::Desktop - provides a holder for "desktop-like" widget behaviour
