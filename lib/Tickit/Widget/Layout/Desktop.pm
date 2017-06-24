@@ -113,7 +113,7 @@ sub overlay {
 
 	# Each child widget, from back to front
 	CHILD:
-	foreach my $child (reverse grep defined, map $win_map{refaddr($_)}, @{$self->window->{child_windows}}) {
+	foreach my $child (reverse grep defined, map $win_map{refaddr($_)}, $self->window->subwindows) {
 		next CHILD unless my $w = $child->window;
 		next CHILD unless $w->rect->intersects($target);
 
@@ -436,7 +436,7 @@ Arrange all the windows in a cascade (first at 1,1, second at 2,2, etc.).
 
 sub cascade {
 	my $self = shift;
-	my @windows = reverse @{$self->window->{child_windows}};
+	my @windows = reverse $self->window->subwindows;
 	my $x = 0;
 	my $y = 0;
 	my $lines = $self->window->lines - @windows;
@@ -508,7 +508,7 @@ Close all the windows.
 
 sub close_all {
 	my $self = shift;
-	$_->close for reverse @{$self->window->{child_windows}};
+	$_->close for reverse $self->window->subwindows;
 }
 
 sub close_panel {
