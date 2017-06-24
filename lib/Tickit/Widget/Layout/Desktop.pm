@@ -517,8 +517,9 @@ sub close_panel {
 	my $addr = refaddr($panel);
 	List::UtilsBy::extract_by { refaddr($_) == $addr }@{ $self->{widgets} };
 	$panel->window->close;
-	$self->window->tickit->later(sub {
-		$self->window->expose($rect);
+	my $win = $self->window;
+	$win->tickit->later(sub {
+		$win->expose($rect);
 	})
 }
 
