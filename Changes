@@ -1,6 +1,12 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+    No new features.
+
+    Bugs fixed:
+
+    - handle cases where panel has no dimensions specified
+    - update for latest Tickit::Widget and Tickit releases
 
 0.011     2017-06-25 03:05:32+08:00 Asia/Kuala_Lumpur
     No new features.
