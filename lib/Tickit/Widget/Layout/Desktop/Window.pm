@@ -570,7 +570,7 @@ sub change_geometry {
 
     my $linked = $self->linked_widgets;
     EDGE:
-    for my $edge (keys %$linked) {  
+    for my $edge (keys %$linked) {
         my $delta = $rect->$edge - $self->window->$edge or next EDGE;
         my @target = @{$linked->{$edge} ||= []};
         while(my ($k, $v) = splice @target, 0, 2) {
