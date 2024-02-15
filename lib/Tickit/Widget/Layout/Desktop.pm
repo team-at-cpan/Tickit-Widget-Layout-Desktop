@@ -7,7 +7,7 @@ class Tickit::Widget::Layout::Desktop :isa(Tickit::ContainerWidget);
 
 use utf8;
 
-our $VERSION = '0.012';
+our $VERSION = '0.013';
 # AUTHORITY
 
 =head1 NAME

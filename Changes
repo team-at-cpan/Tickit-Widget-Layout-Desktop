@@ -1,6 +1,10 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+    [Bugs fixed]
+
+    - latest Tickit::Widget and Tickit::Style require Object::Pad-compatible classes
+    - avoid segfault when closing a window
 
 0.012     2020-09-20 12:52:50+08:00 Asia/Kuala_Lumpur
     No new features.
@@ -9,11 +13,6 @@ Revision history for {{$dist->name}}
 
     - handle cases where panel has no dimensions specified
     - update for latest Tickit::Widget and Tickit releases
-
-    [Bugs fixed]
-
-    - latest Tickit::Widget and Tickit::Style require Object::Pad-compatible classes
-    - avoid segfault when closing a window
 
 0.011     2017-06-25 03:05:32+08:00 Asia/Kuala_Lumpur
     No new features.
