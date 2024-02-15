@@ -1,0 +1,55 @@
+---
+abstract: 'desktop-like float management implementation for Tickit'
+author:
+  - 'Tom Molesworth <TEAM@cpan.org>'
+build_requires:
+  ExtUtils::MakeMaker: '0'
+  File::Spec: '0'
+  IO::Handle: '0'
+  IPC::Open3: '0'
+  Test::CheckDeps: '0.010'
+  Test::More: '0.98'
+configure_requires:
+  ExtUtils::MakeMaker: '0'
+dynamic_config: 0
+generated_by: 'Dist::Zilla version 6.031, CPAN::Meta::Converter version 2.150010'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: '1.4'
+name: Tickit-Widget-Layout-Desktop
+no_index:
+  directory:
+    - eg
+    - share
+    - shares
+    - t
+    - xt
+provides:
+  Tickit::Widget::Layout::Desktop:
+    file: lib/Tickit/Widget/Layout/Desktop.pm
+    version: '0.013'
+  Tickit::Widget::Layout::Desktop::Window:
+    file: lib/Tickit/Widget/Layout/Desktop/Window.pm
+    version: '0.013'
+requires:
+  List::Util: '1.29'
+  List::UtilsBy: '0'
+  Tickit: '0.74'
+  Tickit::Widget: '0.58'
+  Tickit::Widget::Menu: '0'
+  Tickit::WidgetRole::Movable: '0.004'
+  Variable::Disposition: '0'
+  curry::weak: '0'
+  parent: '0'
+resources:
+  bugtracker: https://github.com/team-at-cpan/Tickit-Widget-Layout-Desktop/issues
+  homepage: https://github.com/team-at-cpan/Tickit-Widget-Layout-Desktop
+  repository: https://github.com/team-at-cpan/Tickit-Widget-Layout-Desktop.git
+version: '0.013'
+x_authority: cpan:TEAM
+x_contributors:
+  - 'Tom Molesworth <tom@perlsite.co.uk>'
+x_generated_by_perl: v5.38.0
+x_serialization_backend: 'YAML::Tiny version 1.74'
+x_spdx_expression: 'Artistic-1.0-Perl OR GPL-1.0-or-later'
