@@ -49,6 +49,7 @@ window lists and launchers
 =cut
 
 use curry::weak;
+use List::UtilsBy;
 use Scalar::Util qw(refaddr);
 use List::Util qw(max pairmap);
 use Tickit::Utils qw(textwidth distribute);
@@ -494,12 +495,14 @@ method close_all {
 method close_panel ($panel) {
     my $rect = $panel->window->rect;
     my $addr = refaddr($panel);
-	List::UtilsBy::extract_by { refaddr($_) == $addr }@{ $self->{widgets} };
-	$panel->window->close;
-	my $win = $self->window;
-	$win->tickit->later(sub {
-		$win->expose($rect);
-	})
+    List::UtilsBy::extract_by {
+        refaddr($_) == $addr
+    } $self->{widgets}->@*;
+    my $win = $self->window;
+    $win->tickit->later(sub {
+        $panel->window->close;
+        $win->expose($rect);
+    });
 }
 
 # Tickit::Widget
