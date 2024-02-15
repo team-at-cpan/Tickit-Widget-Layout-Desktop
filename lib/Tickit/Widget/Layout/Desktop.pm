@@ -8,6 +8,7 @@ class Tickit::Widget::Layout::Desktop :isa(Tickit::ContainerWidget);
 use utf8;
 
 our $VERSION = '0.012';
+# AUTHORITY
 
 =head1 NAME
 
@@ -174,13 +175,17 @@ method create_panel (%args) {
     $args{bottom} = $win->lines - $args{bottom} if exists $args{bottom};
     $args{right} = $win->cols - $args{right} if exists $args{right};
 
-    # Extrapolate coördinates to ensure we have top+lines
-    $args{top}   //= delete($args{bottom}) - $args{lines};
-    $args{lines} //= delete($args{bottom}) - $args{top};
+    if(defined(my $bottom = delete $args{bottom})) {
+        # Extrapolate coördinates to ensure we have top+lines
+        $args{top}   //= delete($args{bottom}) - $args{lines} if exists $args{lines};
+        $args{lines} //= delete($args{bottom}) - $args{top} if exists $args{top};
+    }
 
-    # Extrapolate coördinates to ensure we have left+cols
-    $args{left}  //= delete($args{right}) - $args{cols};
-    $args{cols}  //= delete($args{right}) - $args{left};
+    if(defined(my $right = delete $args{right})) {
+        # Extrapolate coördinates to ensure we have left+cols
+        $args{left}  //= delete($args{right}) - $args{cols} if exists $args{cols};
+        $args{cols}  //= delete($args{right}) - $args{left} if exists $args{left};
+    }
 
     $args{top} //= 2;
     $args{left} //= 2;

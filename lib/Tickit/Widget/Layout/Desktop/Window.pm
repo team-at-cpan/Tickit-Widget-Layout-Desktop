@@ -8,7 +8,8 @@ class Tickit::Widget::Layout::Desktop::Window :isa(Tickit::SingleChildWidget);
 apply Tickit::WidgetRole::Movable;
 
 # VERSION
-#
+# AUTHORITY
+
 =head1 NAME
 
 Tickit::Widget::Layout::Desktop - provides a holder for "desktop-like" widget behaviour
